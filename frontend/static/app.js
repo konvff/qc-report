@@ -604,24 +604,23 @@ function renderAqlTab() {
       major_found: "0",
       major_allowed: meta.major_allowed || "",
       minor_found: "0",
-      minor_allowed: meta.minor_allowed || "",
       pass_fail: "PASS"
     }];
   }
 
   const aqlTableRowsHtml = rows.map((row, i) => `
     <tr>
-      <td><input data-aql-i="${i}" data-f="item_description" value="${row.item_description ?? ""}" ${canEdit ? "" : "disabled"}></td>
-      <td><input data-aql-i="${i}" data-f="size" value="${row.size ?? ""}" style="width:70px;" ${canEdit ? "" : "disabled"}></td>
-      <td><input data-aql-i="${i}" data-f="sample_size" value="${row.sample_size ?? ""}" style="width:60px;" ${canEdit ? "" : "disabled"}></td>
-      <td><input data-aql-i="${i}" data-f="critical_found" value="${row.critical_found ?? "00"}" style="width:50px;" ${canEdit ? "" : "disabled"}></td>
-      <td><input data-aql-i="${i}" data-f="critical_allowed" value="${row.critical_allowed ?? "00"}" style="width:50px;" ${canEdit ? "" : "disabled"}></td>
-      <td><input data-aql-i="${i}" data-f="major_found" value="${row.major_found ?? "0"}" style="width:50px;" ${canEdit ? "" : "disabled"}></td>
-      <td><input data-aql-i="${i}" data-f="major_allowed" value="${row.major_allowed ?? ""}" style="width:50px;" ${canEdit ? "" : "disabled"}></td>
-      <td><input data-aql-i="${i}" data-f="minor_found" value="${row.minor_found ?? "0"}" style="width:50px;" ${canEdit ? "" : "disabled"}></td>
-      <td><input data-aql-i="${i}" data-f="minor_allowed" value="${row.minor_allowed ?? ""}" style="width:50px;" ${canEdit ? "" : "disabled"}></td>
-      <td>
-        <select data-aql-i="${i}" data-f="pass_fail" ${canEdit ? "" : "disabled"}>
+      <td><input data-aql-i="${i}" data-f="item_description" value="${row.item_description ?? ""}" style="min-width:140px;" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="size" value="${row.size ?? ""}" style="width:70px; min-width:70px;" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="sample_size" value="${row.sample_size ?? ""}" style="width:70px; min-width:70px;" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="critical_found" value="${row.critical_found ?? "00"}" style="width:50px; min-width:50px;" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="critical_allowed" value="${row.critical_allowed ?? "00"}" style="width:50px; min-width:50px;" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="major_found" value="${row.major_found ?? "0"}" style="width:50px; min-width:50px;" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="major_allowed" value="${row.major_allowed ?? ""}" style="width:50px; min-width:50px;" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="minor_found" value="${row.minor_found ?? "0"}" style="width:50px; min-width:50px;" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="minor_allowed" value="${row.minor_allowed ?? ""}" style="width:50px; min-width:50px;" ${canEdit ? "" : "disabled"}></td>
+      <td style="min-width:110px;">
+        <select data-aql-i="${i}" data-f="pass_fail" style="width:100px; min-width:100px; padding: 8px 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #0f172a; font-weight: 600; cursor: pointer;" ${canEdit ? "" : "disabled"}>
           <option value="PASS" ${(row.pass_fail || "PASS") === "PASS" ? "selected" : ""}>PASS</option>
           <option value="FAIL" ${row.pass_fail === "FAIL" ? "selected" : ""}>FAIL</option>
         </select>
@@ -637,23 +636,23 @@ function renderAqlTab() {
       <table class="row-table" id="aql-rows-table">
         <thead>
           <tr>
-            <th>Item Description</th>
-            <th>Size</th>
-            <th>Sample Size</th>
-            <th>Crit Found</th>
-            <th>Crit Allow</th>
-            <th>Maj Found</th>
-            <th>Maj Allow</th>
-            <th>Min Found</th>
-            <th>Min Allow</th>
-            <th>Result</th>
+            <th style="min-width:140px;">Item Description</th>
+            <th style="min-width:70px;">Size</th>
+            <th style="min-width:70px;">Sample Size</th>
+            <th style="min-width:60px;">Crit Found</th>
+            <th style="min-width:60px;">Crit Allow</th>
+            <th style="min-width:60px;">Maj Found</th>
+            <th style="min-width:60px;">Maj Allow</th>
+            <th style="min-width:60px;">Min Found</th>
+            <th style="min-width:60px;">Min Allow</th>
+            <th style="min-width:110px;">Result</th>
             ${canEdit ? "<th></th>" : ""}
           </tr>
         </thead>
         <tbody>${aqlTableRowsHtml}</tbody>
       </table>
     </div>
-    ${canEdit ? `<div class="row-actions" style="margin-top:8px;"><button class="btn-secondary" id="add-aql-row">+ Add Item Description row</button></div>` : ""}
+    ${canEdit ? `<div class="row-actions" style="margin-top:16px; border-top:none;"><button class="btn-secondary" id="add-aql-row">+ Add Item Description row</button></div>` : ""}
   </div>
 
   <div class="card">
