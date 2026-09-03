@@ -565,7 +565,6 @@ const DEFECT_TAXONOMY = [
 function renderAqlTab() {
   const r = state.currentReport;
   const canEdit = state.user.role === "qc" || state.user.role === "admin";
-  const aql = (r.aql_rows && r.aql_rows[0]) || {};
   const defects = r.defects || {};
   const defectsHtml = DEFECT_TAXONOMY.map(label => {
     const d = defects[label] || {};
@@ -578,9 +577,87 @@ function renderAqlTab() {
   }).join("");
   const conclusion = r.conclusion || "PENDING";
   const meta = r.defects_meta || {};
+
+  // Build AQL item description rows (auto-fallback to PO rows if not set)
+  let rows = r.aql_rows || [];
+  if (!rows.length && r.po_rows && r.po_rows.length) {
+    rows = r.po_rows.map((po, idx) => ({
+      item_description: po.item_description || meta.product || "",
+      size: po.size || meta.size || "",
+      sample_size: idx === 0 ? (meta.sample_size || "") : "",
+      critical_found: idx === 0 ? "00" : "",
+      critical_allowed: idx === 0 ? "00" : "",
+      major_found: idx === 0 ? "0" : "",
+      major_allowed: idx === 0 ? (meta.major_allowed || "") : "",
+      minor_found: idx === 0 ? "0" : "",
+      minor_allowed: idx === 0 ? (meta.minor_allowed || "") : "",
+      pass_fail: idx === 0 ? "PASS" : ""
+    }));
+  }
+  if (!rows.length) {
+    rows = [{
+      item_description: meta.product || "",
+      size: meta.size || "",
+      sample_size: meta.sample_size || "",
+      critical_found: "00",
+      critical_allowed: "00",
+      major_found: "0",
+      major_allowed: meta.major_allowed || "",
+      minor_found: "0",
+      minor_allowed: meta.minor_allowed || "",
+      pass_fail: "PASS"
+    }];
+  }
+
+  const aqlTableRowsHtml = rows.map((row, i) => `
+    <tr>
+      <td><input data-aql-i="${i}" data-f="item_description" value="${row.item_description ?? ""}" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="size" value="${row.size ?? ""}" style="width:70px;" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="sample_size" value="${row.sample_size ?? ""}" style="width:60px;" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="critical_found" value="${row.critical_found ?? "00"}" style="width:50px;" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="critical_allowed" value="${row.critical_allowed ?? "00"}" style="width:50px;" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="major_found" value="${row.major_found ?? "0"}" style="width:50px;" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="major_allowed" value="${row.major_allowed ?? ""}" style="width:50px;" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="minor_found" value="${row.minor_found ?? "0"}" style="width:50px;" ${canEdit ? "" : "disabled"}></td>
+      <td><input data-aql-i="${i}" data-f="minor_allowed" value="${row.minor_allowed ?? ""}" style="width:50px;" ${canEdit ? "" : "disabled"}></td>
+      <td>
+        <select data-aql-i="${i}" data-f="pass_fail" ${canEdit ? "" : "disabled"}>
+          <option value="PASS" ${(row.pass_fail || "PASS") === "PASS" ? "selected" : ""}>PASS</option>
+          <option value="FAIL" ${row.pass_fail === "FAIL" ? "selected" : ""}>FAIL</option>
+        </select>
+      </td>
+      ${canEdit ? `<td><button class="icon-btn" data-del-aql="${i}">✕</button></td>` : ""}
+    </tr>`).join("");
+
   return `
   <div class="card">
-    <h2>AQL Sampling ${canEdit ? "" : "(QC only)"}</h2>
+    <h2>Item Description & AQL Sampling Table ${canEdit ? "" : "(QC only)"}</h2>
+    <p class="hint">Table rendered directly after PO Details in the Word report. You can manually edit or add rows below.</p>
+    <div class="row-table-wrap">
+      <table class="row-table" id="aql-rows-table">
+        <thead>
+          <tr>
+            <th>Item Description</th>
+            <th>Size</th>
+            <th>Sample Size</th>
+            <th>Crit Found</th>
+            <th>Crit Allow</th>
+            <th>Maj Found</th>
+            <th>Maj Allow</th>
+            <th>Min Found</th>
+            <th>Min Allow</th>
+            <th>Result</th>
+            ${canEdit ? "<th></th>" : ""}
+          </tr>
+        </thead>
+        <tbody>${aqlTableRowsHtml}</tbody>
+      </table>
+    </div>
+    ${canEdit ? `<div class="row-actions" style="margin-top:8px;"><button class="btn-secondary" id="add-aql-row">+ Add Item Description row</button></div>` : ""}
+  </div>
+
+  <div class="card">
+    <h2>AQL General Metadata</h2>
     <div class="grid2">
       ${field("Product", "meta-product", meta.product)}
       ${field("Size", "meta-size", meta.size)}
@@ -1051,6 +1128,26 @@ function bindTabContent() {
   }
 
   if (t === "aql") {
+    document.getElementById("add-aql-row")?.addEventListener("click", () => {
+      state.currentReport.aql_rows = state.currentReport.aql_rows || [];
+      state.currentReport.aql_rows.push({
+        item_description: "", size: "", sample_size: "",
+        critical_found: "00", critical_allowed: "00",
+        major_found: "0", major_allowed: "",
+        minor_found: "0", minor_allowed: "", pass_fail: "PASS"
+      });
+      render();
+    });
+
+    document.getElementById("aql-rows-table")?.addEventListener("click", e => {
+      const btn = e.target.closest("[data-del-aql]");
+      if (btn) {
+        state.currentReport.aql_rows = state.currentReport.aql_rows || [];
+        state.currentReport.aql_rows.splice(parseInt(btn.dataset.delAql), 1);
+        render();
+      }
+    });
+
     document.getElementById("save-aql")?.addEventListener("click", async () => {
       const defects = {};
       let totalMajor = 0;
@@ -1071,23 +1168,24 @@ function bindTabContent() {
       });
       await saveSection("defects_meta", meta);
 
-      const majAllow = parseInt(meta.major_allowed, 10) || 0;
-      const minAllow = parseInt(meta.minor_allowed, 10) || 0;
-      const pf = (totalMajor <= majAllow && totalMinor <= minAllow) ? "PASS" : "FAIL";
-
-      const aqlRow = [{
-        item_description: meta.product || "",
-        size: meta.size || "",
-        sample_size: meta.sample_size || "",
-        critical_found: "00",
-        critical_allowed: "00",
-        major_found: String(totalMajor),
-        major_allowed: String(meta.major_allowed || ""),
-        minor_found: String(totalMinor),
-        minor_allowed: String(meta.minor_allowed || ""),
-        pass_fail: pf
-      }];
-      await saveSection("aql_rows", aqlRow);
+      const aqlRows = [];
+      document.querySelectorAll("#aql-rows-table tbody tr").forEach(tr => {
+        const getVal = f => tr.querySelector(`[data-f="${f}"]`)?.value || "";
+        aqlRows.push({
+          item_description: getVal("item_description"),
+          size: getVal("size"),
+          sample_size: getVal("sample_size"),
+          critical_found: getVal("critical_found") || "00",
+          critical_allowed: getVal("critical_allowed") || "00",
+          major_found: getVal("major_found") || "0",
+          major_allowed: getVal("major_allowed") || "",
+          minor_found: getVal("minor_found") || "0",
+          minor_allowed: getVal("minor_allowed") || "",
+          pass_fail: getVal("pass_fail") || "PASS"
+        });
+      });
+      state.currentReport.aql_rows = aqlRows;
+      await saveSection("aql_rows", aqlRows);
 
       const conclusion = document.querySelector('input[name="conclusion"]:checked')?.value || "PENDING";
       await saveSection("conclusion", conclusion);
