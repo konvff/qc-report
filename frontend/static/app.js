@@ -162,6 +162,7 @@ function renderTopbar() {
     <div class="user-info">
       <span>${state.user.name}</span>
       <span class="user-role">${state.user.role}</span>
+      <button class="link" id="change-pwd-btn">Change password</button>
       <button class="link" id="logout-btn">Sign out</button>
     </div>
   </div>`;
@@ -172,6 +173,25 @@ function bindTopbarCommon() {
   if (btn) btn.addEventListener("click", logout);
   const back = document.getElementById("back-btn");
   if (back) back.addEventListener("click", () => { state.view = "dashboard"; render(); });
+
+  const pwdBtn = document.getElementById("change-pwd-btn");
+  if (pwdBtn) {
+    pwdBtn.addEventListener("click", async () => {
+      const old_password = prompt("Enter your CURRENT password:");
+      if (!old_password) return;
+      const new_password = prompt("Enter your NEW password (at least 4 characters):");
+      if (!new_password) return;
+      try {
+        await api("/auth/change-password", {
+          method: "POST",
+          body: JSON.stringify({ old_password, new_password })
+        });
+        toast("Password changed successfully!");
+      } catch (err) {
+        toast(err.message);
+      }
+    });
+  }
 }
 
 // ---------------- DASHBOARD ----------------

@@ -59,3 +59,26 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db), _admin=Depen
 @router.get("/users", response_model=list[UserOut])
 def list_users(db: Session = Depends(get_db), _admin=Depends(require_admin)):
     return db.query(User).all()
+
+
+from ..auth import hash_password, verify_password, create_access_token, require_admin, get_current_user
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+
+@router.post("/change-password")
+def change_password(
+    payload: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    if not verify_password(payload.old_password, user.password_hash):
+        raise HTTPException(status_code=400, detail="Incorrect current password")
+    if len(payload.new_password) < 4:
+        raise HTTPException(status_code=400, detail="New password must be at least 4 characters")
+    user.password_hash = hash_password(payload.new_password)
+    db.commit()
+    return {"ok": True, "message": "Password changed successfully"}

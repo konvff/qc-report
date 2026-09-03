@@ -24,33 +24,44 @@ _run_migrations()
 
 from .models import Factory
 
-# Ensure initial admin, QC user, and factory exist on fresh DB
 def _ensure_default_seed():
     db = SessionLocal()
     try:
-        if not db.query(User).filter(User.role == UserRole.ADMIN).first():
-            default_email = os.environ.get("DEFAULT_ADMIN_EMAIL", "admin@example.com")
-            default_password = os.environ.get("DEFAULT_ADMIN_PASSWORD", "changeme123")
+        admin_email = os.environ.get("DEFAULT_ADMIN_EMAIL", "admin@example.com")
+        admin_pass = os.environ.get("DEFAULT_ADMIN_PASSWORD", "changeme123")
+        admin = db.query(User).filter(User.role == UserRole.ADMIN).first()
+        if not admin:
             admin = User(
                 name="Admin",
-                email=default_email,
-                password_hash=hash_password(default_password),
+                email=admin_email,
+                password_hash=hash_password(admin_pass),
                 role=UserRole.ADMIN,
             )
             db.add(admin)
             db.commit()
-            print(f"Created default admin: {default_email} / {default_password}")
+            print(f"Created default admin: {admin_email}")
+        elif "DEFAULT_ADMIN_PASSWORD" in os.environ:
+            admin.password_hash = hash_password(admin_pass)
+            db.commit()
+            print("Updated admin password from env")
 
-        if not db.query(User).filter(User.role == UserRole.QC).first():
+        qc_email = os.environ.get("DEFAULT_QC_EMAIL", "qc@example.com")
+        qc_pass = os.environ.get("DEFAULT_QC_PASSWORD", "changeme123")
+        qc = db.query(User).filter(User.role == UserRole.QC).first()
+        if not qc:
             qc = User(
                 name="QC Inspector",
-                email="qc@example.com",
-                password_hash=hash_password("changeme123"),
+                email=qc_email,
+                password_hash=hash_password(qc_pass),
                 role=UserRole.QC,
             )
             db.add(qc)
             db.commit()
-            print("Created default QC user: qc@example.com / changeme123")
+            print(f"Created default QC user: {qc_email}")
+        elif "DEFAULT_QC_PASSWORD" in os.environ:
+            qc.password_hash = hash_password(qc_pass)
+            db.commit()
+            print("Updated QC password from env")
 
         if not db.query(Factory).first():
             factory = Factory(name="Default Factory", location="Main Site")
