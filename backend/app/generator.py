@@ -445,7 +445,7 @@ def generate_report(template_path, output_path, data):
     if not aql_list:
         meta = data.get("defects_meta", {})
         defects = data.get("defects", {})
-        po_first = (data.get("po_rows") or [{}])[0]
+        po_rows = data.get("po_rows") or []
         
         tot_maj = 0
         tot_min = 0
@@ -463,6 +463,7 @@ def generate_report(template_path, output_path, data):
                     
         maj_allow = meta.get("major_allowed") or ""
         min_allow = meta.get("minor_allowed") or ""
+        sample_size = meta.get("sample_size") or ""
         
         pf = "PASS"
         try:
@@ -473,18 +474,34 @@ def generate_report(template_path, output_path, data):
         except Exception:
             pass
 
-        aql_list = [{
-            "item_description": meta.get("product") or po_first.get("item_description") or "",
-            "size": meta.get("size") or po_first.get("size") or "",
-            "sample_size": meta.get("sample_size") or "",
-            "critical_found": "00",
-            "critical_allowed": "00",
-            "major_found": str(tot_maj),
-            "major_allowed": str(maj_allow),
-            "minor_found": str(tot_min),
-            "minor_allowed": str(min_allow),
-            "pass_fail": pf
-        }]
+        if po_rows:
+            aql_list = []
+            for idx, po_item in enumerate(po_rows):
+                aql_list.append({
+                    "item_description": po_item.get("item_description") or meta.get("product") or "",
+                    "size": po_item.get("size") or meta.get("size") or "",
+                    "sample_size": str(sample_size) if idx == 0 else "",
+                    "critical_found": "00" if idx == 0 else "",
+                    "critical_allowed": "00" if idx == 0 else "",
+                    "major_found": str(tot_maj) if idx == 0 else "",
+                    "major_allowed": str(maj_allow) if idx == 0 else "",
+                    "minor_found": str(tot_min) if idx == 0 else "",
+                    "minor_allowed": str(min_allow) if idx == 0 else "",
+                    "pass_fail": pf if idx == 0 else ""
+                })
+        else:
+            aql_list = [{
+                "item_description": meta.get("product") or "",
+                "size": meta.get("size") or "",
+                "sample_size": str(sample_size),
+                "critical_found": "00",
+                "critical_allowed": "00",
+                "major_found": str(tot_maj),
+                "major_allowed": str(maj_allow),
+                "minor_found": str(tot_min),
+                "minor_allowed": str(min_allow),
+                "pass_fail": pf
+            }]
 
     t = tables[TABLES["aql_results"]]
     orig_data_rows = len(t.rows) - 2  # minus header row and Total row
