@@ -1,0 +1,464 @@
+{
+ "standards_photos": [
+  {
+   "row": 1,
+   "col": 0,
+   "caption": "Shade Comparison View with Approved Standard",
+   "label": "Shade Comparison View with Approved Standard 1"
+  },
+  {
+   "row": 3,
+   "col": 0,
+   "caption": "Shade Comparison View with Approved Standard",
+   "label": "Shade Comparison View with Approved Standard 2"
+  },
+  {
+   "row": 5,
+   "col": 0,
+   "caption": "Shade Comparison View with Approved Standard",
+   "label": "Shade Comparison View with Approved Standard 3"
+  },
+  {
+   "row": 7,
+   "col": 0,
+   "caption": "Shade Comparison View with Approved Standard",
+   "label": "Shade Comparison View with Approved Standard 4"
+  },
+  {
+   "row": 9,
+   "col": 0,
+   "caption": "Shade Comparison View with Approved Standard",
+   "label": "Shade Comparison View with Approved Standard 5"
+  },
+  {
+   "row": 11,
+   "col": 0,
+   "caption": "Shade Comparison View with Approved Standard",
+   "label": "Shade Comparison View with Approved Standard 6"
+  }
+ ],
+ "packing_photos": [
+  {
+   "row": 1,
+   "col": 0,
+   "caption": "Cartons Stacking View",
+   "label": "Cartons Stacking View"
+  },
+  {
+   "row": 3,
+   "col": 0,
+   "caption": "Packed Carton Shipping Mark View",
+   "label": "Packed Carton Shipping Mark View"
+  },
+  {
+   "row": 3,
+   "col": 1,
+   "caption": "Packed Carton Barcode Sticker View",
+   "label": "Packed Carton Barcode Sticker View"
+  },
+  {
+   "row": 5,
+   "col": 0,
+   "caption": "Packed Carton Sticker View",
+   "label": "Packed Carton Sticker View"
+  },
+  {
+   "row": 7,
+   "col": 0,
+   "caption": "Packed Carton Shorter Side View",
+   "label": "Packed Carton Shorter Side View"
+  },
+  {
+   "row": 7,
+   "col": 1,
+   "caption": "Packed Carton Longer Side View",
+   "label": "Packed Carton Longer Side View"
+  },
+  {
+   "row": 9,
+   "col": 0,
+   "caption": "Packed Carton Corner Side View",
+   "label": "Packed Carton Corner Side View"
+  },
+  {
+   "row": 11,
+   "col": 0,
+   "caption": "Carton Open View with Protector Sheet",
+   "label": "Carton Open View with Protector Sheet"
+  },
+  {
+   "row": 11,
+   "col": 1,
+   "caption": "Carton Open View without Protector Sheet",
+   "label": "Carton Open View without Protector Sheet"
+  },
+  {
+   "row": 13,
+   "col": 0,
+   "caption": "Carton Packing Style View",
+   "label": "Carton Packing Style View"
+  },
+  {
+   "row": 13,
+   "col": 1,
+   "caption": "5Ply Carton Quality View",
+   "label": "5Ply Carton Quality View"
+  },
+  {
+   "row": 15,
+   "col": 0,
+   "caption": "Packed Sets Front  Side View",
+   "label": "Packed Sets Front  Side View"
+  },
+  {
+   "row": 15,
+   "col": 1,
+   "caption": "Packed Sets Back Side View",
+   "label": "Packed Sets Back Side View"
+  },
+  {
+   "row": 17,
+   "col": 0,
+   "caption": "Poly Bag Printed Safety View & Recycled Logo View",
+   "label": "Poly Bag Printed Safety View & Recycled Logo View"
+  },
+  {
+   "row": 19,
+   "col": 0,
+   "caption": "Set with Loose Card & Poly Bag View",
+   "label": "Set with Loose Card & Poly Bag View 1"
+  },
+  {
+   "row": 21,
+   "col": 0,
+   "caption": "Set with Loose Card & Poly Bag View",
+   "label": "Set with Loose Card & Poly Bag View 2"
+  },
+  {
+   "row": 23,
+   "col": 0,
+   "caption": "Printed Barcode View",
+   "label": "Printed Barcode View 1"
+  },
+  {
+   "row": 25,
+   "col": 0,
+   "caption": "Printed Barcode View",
+   "label": "Printed Barcode View 2"
+  }
+ ],
+ "defect_photos": [
+  {
+   "row": 1,
+   "col": 0,
+   "caption": "Open Seam",
+   "label": "Open Seam"
+  },
+  {
+   "row": 1,
+   "col": 1,
+   "caption": "Uneven Stitch",
+   "label": "Uneven Stitch"
+  },
+  {
+   "row": 3,
+   "col": 0,
+   "caption": "Colour Stain",
+   "label": "Colour Stain"
+  },
+  {
+   "row": 3,
+   "col": 1,
+   "caption": "Off Registration",
+   "label": "Off Registration"
+  },
+  {
+   "row": 5,
+   "col": 0,
+   "caption": "Pleat",
+   "label": "Pleat"
+  },
+  {
+   "row": 5,
+   "col": 1,
+   "caption": "Weaving Defect",
+   "label": "Weaving Defect"
+  },
+  {
+   "row": 7,
+   "col": 0,
+   "caption": "Shade Within Set",
+   "label": "Shade Within Set"
+  },
+  {
+   "row": 7,
+   "col": 1,
+   "caption": "Hanging Thread",
+   "label": "Hanging Thread"
+  },
+  {
+   "row": 9,
+   "col": 0,
+   "caption": "Uncut Thread",
+   "label": "Uncut Thread"
+  },
+  {
+   "row": 9,
+   "col": 1,
+   "caption": "Stain",
+   "label": "Stain"
+  },
+  {
+   "row": 11,
+   "col": 0,
+   "caption": "Touching",
+   "label": "Touching"
+  },
+  {
+   "row": 11,
+   "col": 1,
+   "caption": "Puckering",
+   "label": "Puckering"
+  }
+ ],
+ "measurement_photos": [
+  {
+   "row": 1,
+   "col": 0,
+   "caption": "Measurement View",
+   "label": "Measurement View 1"
+  },
+  {
+   "row": 3,
+   "col": 0,
+   "caption": "Measurement View",
+   "label": "Measurement View 2"
+  },
+  {
+   "row": 5,
+   "col": 0,
+   "caption": "Measurement View",
+   "label": "Measurement View 3"
+  },
+  {
+   "row": 7,
+   "col": 0,
+   "caption": "Measurement View",
+   "label": "Measurement View 4"
+  },
+  {
+   "row": 9,
+   "col": 0,
+   "caption": "Measurement View",
+   "label": "Measurement View 5"
+  },
+  {
+   "row": 11,
+   "col": 0,
+   "caption": "Measurement View",
+   "label": "Measurement View 6"
+  },
+  {
+   "row": 13,
+   "col": 0,
+   "caption": "Measurement View",
+   "label": "Measurement View 7"
+  },
+  {
+   "row": 15,
+   "col": 0,
+   "caption": "Measurement View",
+   "label": "Measurement View 8"
+  },
+  {
+   "row": 17,
+   "col": 0,
+   "caption": "Measurement View",
+   "label": "Measurement View 9"
+  },
+  {
+   "row": 19,
+   "col": 0,
+   "caption": "Measurement View",
+   "label": "Measurement View 10"
+  },
+  {
+   "row": 21,
+   "col": 0,
+   "caption": "Measurement View",
+   "label": "Measurement View 11"
+  },
+  {
+   "row": 23,
+   "col": 0,
+   "caption": "Measurement View",
+   "label": "Measurement View 12"
+  }
+ ],
+ "presentation_photos": [
+  {
+   "row": 1,
+   "col": 0,
+   "caption": "Open Product Front Side View",
+   "label": "Open Product Front Side View 1"
+  },
+  {
+   "row": 1,
+   "col": 1,
+   "caption": "Open Product Back Side View",
+   "label": "Open Product Back Side View 1"
+  },
+  {
+   "row": 3,
+   "col": 0,
+   "caption": "Open Product Front Side View",
+   "label": "Open Product Front Side View 2"
+  },
+  {
+   "row": 3,
+   "col": 1,
+   "caption": "Open Product Back Side View",
+   "label": "Open Product Back Side View 2"
+  },
+  {
+   "row": 5,
+   "col": 0,
+   "caption": "Open Product Front Side View",
+   "label": "Open Product Front Side View 3"
+  },
+  {
+   "row": 5,
+   "col": 1,
+   "caption": "Open Product Back Side View",
+   "label": "Open Product Back Side View 3"
+  },
+  {
+   "row": 7,
+   "col": 0,
+   "caption": "Open Product Front Side View",
+   "label": "Open Product Front Side View 4"
+  },
+  {
+   "row": 7,
+   "col": 1,
+   "caption": "Open Product Back Side View",
+   "label": "Open Product Back Side View 4"
+  },
+  {
+   "row": 9,
+   "col": 0,
+   "caption": "Open Product Front Side View",
+   "label": "Open Product Front Side View 5"
+  },
+  {
+   "row": 9,
+   "col": 1,
+   "caption": "Open Product Back Side View",
+   "label": "Open Product Back Side View 5"
+  },
+  {
+   "row": 11,
+   "col": 0,
+   "caption": "Open Product Front Side View",
+   "label": "Open Product Front Side View 6"
+  },
+  {
+   "row": 11,
+   "col": 1,
+   "caption": "Open Product Back Side View",
+   "label": "Open Product Back Side View 6"
+  },
+  {
+   "row": 13,
+   "col": 0,
+   "caption": "Care Label Front Side View",
+   "label": "Care Label Front Side View 1"
+  },
+  {
+   "row": 13,
+   "col": 1,
+   "caption": "Care Label Back Side View",
+   "label": "Care Label Back Side View 1"
+  },
+  {
+   "row": 15,
+   "col": 0,
+   "caption": "Care Label Front Side View",
+   "label": "Care Label Front Side View 2"
+  },
+  {
+   "row": 15,
+   "col": 1,
+   "caption": "Care Label Back Side View",
+   "label": "Care Label Back Side View 2"
+  },
+  {
+   "row": 17,
+   "col": 0,
+   "caption": "Care Label Front Side View",
+   "label": "Care Label Front Side View 3"
+  },
+  {
+   "row": 17,
+   "col": 1,
+   "caption": "Care Label Back Side View",
+   "label": "Care Label Back Side View 3"
+  }
+ ],
+ "shrinkage_photos": [
+  {
+   "row": 1,
+   "col": 0,
+   "caption": "Before & After wash effect",
+   "label": "Before & After wash effect 1"
+  },
+  {
+   "row": 3,
+   "col": 0,
+   "caption": "Before & After wash effect",
+   "label": "Before & After wash effect 2"
+  },
+  {
+   "row": 5,
+   "col": 0,
+   "caption": "Before & After wash effect",
+   "label": "Before & After wash effect 3"
+  },
+  {
+   "row": 7,
+   "col": 0,
+   "caption": "Before & After wash effect",
+   "label": "Before & After wash effect 4"
+  },
+  {
+   "row": 9,
+   "col": 0,
+   "caption": "Before & After wash effect",
+   "label": "Before & After wash effect 5"
+  },
+  {
+   "row": 11,
+   "col": 0,
+   "caption": "Before & After wash effect",
+   "label": "Before & After wash effect 6"
+  },
+  {
+   "row": 13,
+   "col": 0,
+   "caption": "Before Wash & After Wash Measurement View",
+   "label": "Before Wash & After Wash Measurement View 1"
+  },
+  {
+   "row": 15,
+   "col": 0,
+   "caption": "Before Wash & After Wash Measurement View",
+   "label": "Before Wash & After Wash Measurement View 2"
+  },
+  {
+   "row": 17,
+   "col": 0,
+   "caption": "Before Wash & After Wash Measurement View",
+   "label": "Before Wash & After Wash Measurement View 3"
+  }
+ ]
+}
