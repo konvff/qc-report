@@ -10,7 +10,18 @@ from .auth import hash_password
 from .database import SessionLocal
 from .routers import auth, factories, reports
 
+from sqlalchemy import text
 Base.metadata.create_all(bind=engine)
+
+def _run_migrations():
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE reports ADD COLUMN IF NOT EXISTS measurement_options JSON DEFAULT '{}';"))
+            conn.commit()
+    except Exception as e:
+        print(f"Migration notice: {e}")
+
+_run_migrations()
 
 # Create a default admin account on first run so there's always a way in.
 def _ensure_default_admin():
