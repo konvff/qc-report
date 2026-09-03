@@ -67,6 +67,7 @@ class Report(Base):
     defects_meta = Column(JSON, default=dict)
     defects = Column(JSON, default=dict)
     measurements = Column(JSON, default=dict)
+    measurement_options = Column(JSON, default=dict)
     onsite_tests = Column(JSON, default=dict)
     shrinkage = Column(JSON, default=dict)
 

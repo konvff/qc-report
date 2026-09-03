@@ -44,7 +44,7 @@ ADMIN_SECTIONS = {
 }
 QC_SECTIONS = {
     "aql_rows", "conclusion", "defects", "defects_meta", "measurements",
-    "onsite_tests", "shrinkage",
+    "measurement_options", "onsite_tests", "shrinkage",
 }
 PHOTO_SECTIONS = set(PHOTO_SLOTS.keys())
 
@@ -256,6 +256,7 @@ def generate(report_id: int, db: Session = Depends(get_db), user: User = Depends
         "cartons_selected": _ensure_list(r.cartons_selected),
         "upc_verification": _ensure_list(r.upc_verification),
         "measurements": _ensure_dict(r.measurements),
+        "measurement_options": _ensure_dict(getattr(r, "measurement_options", {})),
         "onsite_tests": _ensure_dict(r.onsite_tests),
         "shrinkage": _ensure_dict(r.shrinkage),
         "photos": photos_by_section,
