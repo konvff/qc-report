@@ -31,14 +31,25 @@ async function api(path, opts = {}) {
   if (opts.body && !(opts.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
-  const res = await fetch(API + path, { ...opts, headers });
+  let res;
+  try {
+    res = await fetch(API + path, { ...opts, headers });
+  } catch (err) {
+    throw new Error("Network error: Cannot reach backend server");
+  }
   if (res.status === 401) {
     logout();
-    throw new Error("Session expired");
+    throw new Error("Session expired - Please sign in again");
   }
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: "Request failed" }));
-    throw new Error(err.detail || "Request failed");
+    let detail = `Request failed (${res.status})`;
+    try {
+      const err = await res.json();
+      if (err.detail) {
+        detail = typeof err.detail === "string" ? err.detail : JSON.stringify(err.detail);
+      }
+    } catch (_) {}
+    throw new Error(detail);
   }
   const ct = res.headers.get("content-type") || "";
   if (ct.includes("application/json")) return res.json();
