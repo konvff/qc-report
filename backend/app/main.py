@@ -22,8 +22,10 @@ def _run_migrations():
 
 _run_migrations()
 
-# Create a default admin account on first run so there's always a way in.
-def _ensure_default_admin():
+from .models import Factory
+
+# Ensure initial admin, QC user, and factory exist on fresh DB
+def _ensure_default_seed():
     db = SessionLocal()
     try:
         if not db.query(User).filter(User.role == UserRole.ADMIN).first():
@@ -37,11 +39,30 @@ def _ensure_default_admin():
             )
             db.add(admin)
             db.commit()
-            print(f"Created default admin: {default_email} / {default_password} -- CHANGE THIS PASSWORD")
+            print(f"Created default admin: {default_email} / {default_password}")
+
+        if not db.query(User).filter(User.role == UserRole.QC).first():
+            qc = User(
+                name="QC Inspector",
+                email="qc@example.com",
+                password_hash=hash_password("changeme123"),
+                role=UserRole.QC,
+            )
+            db.add(qc)
+            db.commit()
+            print("Created default QC user: qc@example.com / changeme123")
+
+        if not db.query(Factory).first():
+            factory = Factory(name="Default Factory", location="Main Site")
+            db.add(factory)
+            db.commit()
+            print("Created default Factory")
+    except Exception as e:
+        print(f"Seed notice: {e}")
     finally:
         db.close()
 
-_ensure_default_admin()
+_ensure_default_seed()
 
 app = FastAPI(title="QC Inspection Report Generator")
 
