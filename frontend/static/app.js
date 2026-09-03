@@ -1053,17 +1053,42 @@ function bindTabContent() {
   if (t === "aql") {
     document.getElementById("save-aql")?.addEventListener("click", async () => {
       const defects = {};
+      let totalMajor = 0;
+      let totalMinor = 0;
       document.querySelectorAll("#defects-table [data-defect]").forEach(inp => {
         const label = inp.dataset.defect, f = inp.dataset.f;
         defects[label] = defects[label] || {};
         defects[label][f] = inp.value;
+        const val = parseInt(inp.value, 10) || 0;
+        if (f === "major") totalMajor += val;
+        if (f === "minor") totalMinor += val;
       });
       await saveSection("defects", defects);
+
       const meta = {};
       ["product", "size", "sample_size", "color", "major_allowed", "minor_allowed"].forEach(k => {
-        meta[k] = document.getElementById("meta-" + k).value;
+        meta[k] = document.getElementById("meta-" + k)?.value || "";
       });
       await saveSection("defects_meta", meta);
+
+      const majAllow = parseInt(meta.major_allowed, 10) || 0;
+      const minAllow = parseInt(meta.minor_allowed, 10) || 0;
+      const pf = (totalMajor <= majAllow && totalMinor <= minAllow) ? "PASS" : "FAIL";
+
+      const aqlRow = [{
+        item_description: meta.product || "",
+        size: meta.size || "",
+        sample_size: meta.sample_size || "",
+        critical_found: "00",
+        critical_allowed: "00",
+        major_found: String(totalMajor),
+        major_allowed: String(meta.major_allowed || ""),
+        minor_found: String(totalMinor),
+        minor_allowed: String(meta.minor_allowed || ""),
+        pass_fail: pf
+      }];
+      await saveSection("aql_rows", aqlRow);
+
       const conclusion = document.querySelector('input[name="conclusion"]:checked')?.value || "PENDING";
       await saveSection("conclusion", conclusion);
       render();

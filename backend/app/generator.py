@@ -441,51 +441,94 @@ def generate_report(template_path, output_path, data):
         set_cell_text(t.cell(total_row, 9), "")
         tables = doc.tables  # refresh full handle after structural change
 
-    if "aql_rows" in data:
-        t = tables[TABLES["aql_results"]]
-        orig_data_rows = len(t.rows) - 2  # minus header row and Total row
-        n_data_rows = resize_row_block(t, 1, orig_data_rows, len(data["aql_rows"]))
-        t = doc.tables[TABLES["aql_results"]]
-        sums = [0] * 6  # sample_size, critical_found, critical_allowed, major_found, major_allowed, minor_found... (we'll compute what we can)
-        total_sample = total_cf = total_ca = total_mjf = total_mja = total_mnf = total_mna = 0
-        for i in range(n_data_rows):
-            r = 1 + i
-            row_data = data["aql_rows"][i] if i < len(data["aql_rows"]) else {}
-            set_cell_text(t.cell(r, 0), row_data.get("item_description", ""))
-            set_cell_text(t.cell(r, 1), row_data.get("size", ""))
-            set_cell_text(t.cell(r, 2), row_data.get("sample_size", ""))
-            set_cell_text(t.cell(r, 3), row_data.get("critical_found", ""))
-            set_cell_text(t.cell(r, 4), row_data.get("critical_allowed", ""))
-            set_cell_text(t.cell(r, 5), row_data.get("major_found", ""))
-            set_cell_text(t.cell(r, 6), row_data.get("major_allowed", ""))
-            set_cell_text(t.cell(r, 7), row_data.get("minor_found", ""))
-            set_cell_text(t.cell(r, 8), row_data.get("minor_allowed", ""))
-            set_cell_text(t.cell(r, 9), row_data.get("pass_fail", ""))
+    aql_list = data.get("aql_rows") or []
+    if not aql_list:
+        meta = data.get("defects_meta", {})
+        defects = data.get("defects", {})
+        po_first = (data.get("po_rows") or [{}])[0]
+        
+        tot_maj = 0
+        tot_min = 0
+        if isinstance(defects, dict):
+            for d in defects.values():
+                if isinstance(d, dict):
+                    try:
+                        tot_maj += int(d.get("major") or 0)
+                    except Exception:
+                        pass
+                    try:
+                        tot_min += int(d.get("minor") or 0)
+                    except Exception:
+                        pass
+                    
+        maj_allow = meta.get("major_allowed") or ""
+        min_allow = meta.get("minor_allowed") or ""
+        
+        pf = "PASS"
+        try:
+            if maj_allow and tot_maj > int(maj_allow):
+                pf = "FAIL"
+            if min_allow and tot_min > int(min_allow):
+                pf = "FAIL"
+        except Exception:
+            pass
 
-            def _num(v):
-                try:
-                    return int(v)
-                except (ValueError, TypeError):
-                    return 0
-            total_sample += _num(row_data.get("sample_size"))
-            total_cf += _num(row_data.get("critical_found"))
-            total_ca += _num(row_data.get("critical_allowed"))
-            total_mjf += _num(row_data.get("major_found"))
-            total_mja += _num(row_data.get("major_allowed"))
-            total_mnf += _num(row_data.get("minor_found"))
-            total_mna += _num(row_data.get("minor_allowed"))
+        aql_list = [{
+            "item_description": meta.get("product") or po_first.get("item_description") or "",
+            "size": meta.get("size") or po_first.get("size") or "",
+            "sample_size": meta.get("sample_size") or "",
+            "critical_found": "00",
+            "critical_allowed": "00",
+            "major_found": str(tot_maj),
+            "major_allowed": str(maj_allow),
+            "minor_found": str(tot_min),
+            "minor_allowed": str(min_allow),
+            "pass_fail": pf
+        }]
 
-        total_row = len(t.rows) - 1
-        set_cell_text(t.cell(total_row, 2), str(total_sample) if total_sample else "")
-        set_cell_text(t.cell(total_row, 3), f"{total_cf:02d}")
-        set_cell_text(t.cell(total_row, 4), f"{total_ca:02d}")
-        set_cell_text(t.cell(total_row, 5), str(total_mjf))
-        set_cell_text(t.cell(total_row, 6), str(total_mja))
-        set_cell_text(t.cell(total_row, 7), str(total_mnf))
-        set_cell_text(t.cell(total_row, 8), str(total_mna))
-        overall_pass = total_mjf <= total_mja and total_mnf <= total_mna and total_cf <= total_ca
-        set_cell_text(t.cell(total_row, 9), "PASS" if overall_pass else "FAIL")
-        tables = doc.tables
+    t = tables[TABLES["aql_results"]]
+    orig_data_rows = len(t.rows) - 2  # minus header row and Total row
+    n_data_rows = resize_row_block(t, 1, orig_data_rows, len(aql_list))
+    t = doc.tables[TABLES["aql_results"]]
+    total_sample = total_cf = total_ca = total_mjf = total_mja = total_mnf = total_mna = 0
+    for i in range(n_data_rows):
+        r = 1 + i
+        row_data = aql_list[i] if i < len(aql_list) else {}
+        set_cell_text(t.cell(r, 0), str(row_data.get("item_description", "")))
+        set_cell_text(t.cell(r, 1), str(row_data.get("size", "")))
+        set_cell_text(t.cell(r, 2), str(row_data.get("sample_size", "")))
+        set_cell_text(t.cell(r, 3), str(row_data.get("critical_found", "00")))
+        set_cell_text(t.cell(r, 4), str(row_data.get("critical_allowed", "00")))
+        set_cell_text(t.cell(r, 5), str(row_data.get("major_found", "0")))
+        set_cell_text(t.cell(r, 6), str(row_data.get("major_allowed", "")))
+        set_cell_text(t.cell(r, 7), str(row_data.get("minor_found", "0")))
+        set_cell_text(t.cell(r, 8), str(row_data.get("minor_allowed", "")))
+        set_cell_text(t.cell(r, 9), str(row_data.get("pass_fail", "PASS")))
+
+        def _num(v):
+            try:
+                return int(v)
+            except (ValueError, TypeError):
+                return 0
+        total_sample += _num(row_data.get("sample_size"))
+        total_cf += _num(row_data.get("critical_found"))
+        total_ca += _num(row_data.get("critical_allowed"))
+        total_mjf += _num(row_data.get("major_found"))
+        total_mja += _num(row_data.get("major_allowed"))
+        total_mnf += _num(row_data.get("minor_found"))
+        total_mna += _num(row_data.get("minor_allowed"))
+
+    total_row = len(t.rows) - 1
+    set_cell_text(t.cell(total_row, 2), str(total_sample) if total_sample else "")
+    set_cell_text(t.cell(total_row, 3), f"{total_cf:02d}")
+    set_cell_text(t.cell(total_row, 4), f"{total_ca:02d}")
+    set_cell_text(t.cell(total_row, 5), str(total_mjf))
+    set_cell_text(t.cell(total_row, 6), str(total_mja))
+    set_cell_text(t.cell(total_row, 7), str(total_mnf))
+    set_cell_text(t.cell(total_row, 8), str(total_mna))
+    overall_pass = total_mjf <= total_mja and total_mnf <= total_mna and total_cf <= total_ca
+    set_cell_text(t.cell(total_row, 9), "PASS" if overall_pass else "FAIL")
+    tables = doc.tables
 
     if "defects" in data or "defects_meta" in data:
         t = tables[TABLES["defects_log"]]
