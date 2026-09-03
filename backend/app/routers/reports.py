@@ -283,3 +283,28 @@ def download_report(report_id: int, db: Session = Depends(get_db)):
         filename=f"{r.report_no}.docx",
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
+
+
+@router.delete("/{report_id}")
+def delete_report(report_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    r = db.query(Report).filter(Report.id == report_id).first()
+    if not r:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    # Delete associated photos from disk & DB
+    photos = db.query(ReportPhoto).filter(ReportPhoto.report_id == report_id).all()
+    for p in photos:
+        if p.file_path and os.path.exists(p.file_path):
+            try: os.remove(p.file_path)
+            except Exception: pass
+        db.delete(p)
+
+    # Delete generated report file if exists
+    out_path = os.path.join(OUTPUT_DIR, f"report_{r.report_no.replace('/', '-')}.docx")
+    if os.path.exists(out_path):
+        try: os.remove(out_path)
+        except Exception: pass
+
+    db.delete(r)
+    db.commit()
+    return {"ok": True, "message": "Report deleted"}

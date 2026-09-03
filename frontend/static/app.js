@@ -194,6 +194,44 @@ function bindTopbarCommon() {
   }
 }
 
+function showConfirmModal({ title, message, confirmText = "Delete", onConfirm }) {
+  const modal = document.createElement("div");
+  modal.className = "modal-overlay";
+  modal.innerHTML = `
+    <div class="modal-card">
+      <div class="modal-icon-wrap">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18"></path>
+          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+          <line x1="10" y1="11" x2="10" y2="17"></line>
+          <line x1="14" y1="11" x2="14" y2="17"></line>
+        </svg>
+      </div>
+      <h3>${title}</h3>
+      <p>${message}</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="modal-cancel-btn">Cancel</button>
+        <button class="btn-primary" id="modal-confirm-btn" style="background:var(--danger); border-color:var(--danger);">${confirmText}</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const close = () => {
+    modal.style.opacity = "0";
+    modal.style.transition = "opacity 0.2s ease";
+    setTimeout(() => { if (modal.parentNode) modal.parentNode.removeChild(modal); }, 200);
+  };
+
+  modal.querySelector("#modal-cancel-btn").addEventListener("click", close);
+  modal.querySelector("#modal-confirm-btn").addEventListener("click", async () => {
+    close();
+    if (onConfirm) await onConfirm();
+  });
+}
+
 // ---------------- DASHBOARD ----------------
 function statusLabel(s) {
   return { draft: "Draft", qc_in_progress: "QC in progress", completed: "Completed" }[s] || s;
@@ -203,12 +241,18 @@ function renderDashboard() {
   const factoryOptions = state.factories.map(f => `<option value="${f.id}">${f.name}</option>`).join("");
   const items = state.reports.length
     ? state.reports.map(r => `
-      <div class="report-item" data-id="${r.id}">
+      <div class="report-item" data-id="${r.id}" style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
         <div>
           <div><strong>${r.report_no}</strong></div>
           <div class="meta">${r.customer_name || "—"} · PO ${r.po_number || "—"}</div>
         </div>
-        <span class="badge badge-${r.status}">${statusLabel(r.status)}</span>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="badge badge-${r.status}">${statusLabel(r.status)}</span>
+          <button class="icon-btn del-report-btn" data-del-report="${r.id}" data-report-no="${r.report_no}" title="Delete Report" style="color:var(--danger); font-size:0.9rem; padding:6px 12px; border-radius:6px; background:var(--danger-bg); border:1px solid rgba(239,68,68,0.25); cursor:pointer; font-weight:600; display:flex; align-items:center; gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Delete
+          </button>
+        </div>
       </div>
     `).join("")
     : `<div class="empty-state">No reports yet. Create the first one below.</div>`;
@@ -256,7 +300,29 @@ function renderDashboard() {
 function bindDashboard() {
   bindTopbarCommon();
   document.querySelectorAll(".report-item").forEach(el => {
-    el.addEventListener("click", async () => {
+    el.addEventListener("click", async (e) => {
+      const delBtn = e.target.closest(".del-report-btn");
+      if (delBtn) {
+        e.stopPropagation();
+        const reportId = delBtn.dataset.delReport;
+        const reportNo = delBtn.dataset.reportNo || "this report";
+        showConfirmModal({
+          title: "Delete Inspection Report?",
+          message: `Are you sure you want to delete report "${reportNo}"? All section data and uploaded photos will be permanently removed.`,
+          confirmText: "Yes, Delete",
+          onConfirm: async () => {
+            try {
+              await api(`/reports/${reportId}`, { method: "DELETE" });
+              toast("Report deleted successfully");
+              await loadDashboardData();
+              render();
+            } catch (err) {
+              toast(err.message);
+            }
+          }
+        });
+        return;
+      }
       const id = el.dataset.id;
       await openReport(id);
     });
