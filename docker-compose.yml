@@ -18,7 +18,7 @@ services:
       DATABASE_URL: postgresql://qcapp:qcapp@db:5432/qc_reports
       SECRET_KEY: local-dev-secret-change-me
       DEFAULT_ADMIN_EMAIL: admin@example.com
-      DEFAULT_ADMIN_PASSWORD: changeme123
+      DEFAULT_ADMIN_PASSWORD: admin123
     depends_on:
       - db
     volumes:

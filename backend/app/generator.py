@@ -282,15 +282,57 @@ def sanitize_document(doc):
             parent = run.getparent()
             if parent is not None:
                 parent.remove(run)
-    # Strip every image from the document BODY (all tables, not just the 6
-    # designated photo galleries -- the real report had ad-hoc reference
-    # photos pasted into other cells too, e.g. onsite-test remarks). The
-    # page-header/footer logo lives outside doc.element.body, so it's safe.
-    for drawing in list(body.iter(f"{W_NS}drawing")):
-        run = drawing.getparent()
-        parent = run.getparent()
-        if parent is not None:
-            parent.remove(run)
+    # Strip every image from the tables in the document body.
+    # The logo lives at the top of the document (outside tables), so it's safe.
+    for tbl in body.iter(f"{W_NS}tbl"):
+        for drawing in list(tbl.iter(f"{W_NS}drawing")):
+            run = drawing.getparent()
+            parent = run.getparent()
+            if parent is not None:
+                parent.remove(run)
+
+def inject_header_logo(doc):
+    import os
+    from docx.shared import Inches
+    
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    logo_path = os.path.join(project_root, "frontend", "static", "logo2.png")
+    
+    if not os.path.exists(logo_path) and os.path.exists("/frontend/static/logo2.png"):
+        logo_path = "/frontend/static/logo2.png"
+        
+    if not os.path.exists(logo_path):
+        return
+
+    for s in doc.sections:
+        h0 = None
+        h1 = None
+        for p in s.header.paragraphs:
+            if "COMPANY LOGO HERE" in p.text:
+                h0 = p
+            elif "COTTON HOUSE" in p.text:
+                h1 = p
+        
+        if h0 and h1:
+            h0.text = ""
+            run = h0.add_run()
+            try:
+                run.add_picture(logo_path, width=Inches(0.55))
+                
+                # Add 2 spaces gap after logo before COTTON HOUSE text
+                if len(h1.runs) > 0:
+                    h1.runs[0].text = "  " + h1.runs[0].text.lstrip()
+                # Reduce padding spaces between COTTON HOUSE and Page X of Y
+                if len(h1.runs) > 2:
+                    h1.runs[2].text = "   "
+                
+                # Move picture run to start of H1 paragraph
+                h1._p.insert(0, run._r)
+                
+                # Remove placeholder paragraph
+                h0._element.getparent().remove(h0._element)
+            except Exception:
+                pass
 
 
 # ---------------------------------------------------------------------------
@@ -708,6 +750,8 @@ def generate_report(template_path, output_path, data):
                 cap_row = row + 1
                 if item.get("title") and cap_row < len(t.rows):
                     set_cell_text(t.rows[cap_row].cells[col], item["title"])
+
+    inject_header_logo(doc)
 
     doc.save(output_path)
     return output_path

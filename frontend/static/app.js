@@ -96,7 +96,7 @@ function renderLogin() {
   return `
   <div class="login-wrap">
     <div class="login-card">
-      <img src="/static/company_logo.png" style="height: 64px; object-fit: contain; margin-bottom: 24px; display: block; margin-left: auto; margin-right: auto;" alt="Company Logo">
+      <img src="/static/logo2.png" style="height: 64px; object-fit: contain; margin-bottom: 24px; display: block; margin-left: auto; margin-right: auto;" alt="Company Logo">
       <h1>QC Inspection Reports</h1>
       <p class="sub">Sign in to create or continue an inspection report.</p>
       <form id="login-form">
@@ -147,7 +147,7 @@ function bindLogin() {
 function renderTopbar() {
   return `
   <div class="topbar">
-    <div class="brand"><img src="/static/company_logo.png" style="height: 32px; object-fit: contain;" alt="Logo"> QC Inspection Reports</div>
+    <div class="brand"><img src="/static/logo2.png" style="height: 32px; object-fit: contain;" alt="Logo"> QC Inspection Reports</div>
     <div class="user-info">
       <span>${state.user.name}</span>
       <span class="user-role">${state.user.role}</span>
