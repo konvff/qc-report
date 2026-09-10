@@ -241,17 +241,17 @@ function renderDashboard() {
   const factoryOptions = state.factories.map(f => `<option value="${f.id}">${f.name}</option>`).join("");
   const items = state.reports.length
     ? state.reports.map(r => `
-      <div class="report-item" data-id="${r.id}" style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
+      <div class="report-item" data-id="${r.id}" style="display:flex; align-items:center; justify-content:space-between; gap:16px; cursor:pointer;">
         <div>
           <div><strong>${r.report_no}</strong></div>
           <div class="meta">${r.customer_name || "—"} · PO ${r.po_number || "—"}</div>
         </div>
         <div style="display:flex; align-items:center; gap:12px;">
           <span class="badge badge-${r.status}">${statusLabel(r.status)}</span>
-          <a class="btn-secondary download-report-btn" href="/api/reports/${r.id}/download" download style="text-decoration:none; font-size:0.85rem; padding:6px 12px; border-radius:6px; font-weight:600; display:flex; align-items:center; gap:6px;">
+          <button class="btn-secondary download-report-btn" data-dl-id="${r.id}" data-dl-no="${r.report_no}" style="font-size:0.85rem; padding:6px 12px; border-radius:6px; font-weight:600; display:flex; align-items:center; gap:6px; cursor:pointer;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Download
-          </a>
+          </button>
           <button class="icon-btn del-report-btn" data-del-report="${r.id}" data-report-no="${r.report_no}" title="Delete Report" style="color:var(--danger); font-size:0.9rem; padding:6px 12px; border-radius:6px; background:var(--danger-bg); border:1px solid rgba(239,68,68,0.25); cursor:pointer; font-weight:600; display:flex; align-items:center; gap:6px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             Delete
@@ -301,6 +301,36 @@ function renderDashboard() {
   </div>`;
 }
 
+async function downloadReportFile(reportId, reportNo) {
+  try {
+    toast("Preparing download…");
+    const res = await fetch(`${API}/reports/${reportId}/download`, {
+      headers: { Authorization: "Bearer " + (state.token || "") }
+    });
+    if (!res.ok) {
+      let msg = `Download failed (${res.status})`;
+      try {
+        const err = await res.json();
+        if (err.detail) msg = err.detail;
+      } catch (_) {}
+      throw new Error(msg);
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const cleanNo = (reportNo || "report").replace(/[/\\?%*:|"<>]/g, "-");
+    a.download = `report_${cleanNo}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    toast("Download complete!");
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
 function bindDashboard() {
   bindTopbarCommon();
   document.querySelectorAll(".report-item").forEach(el => {
@@ -308,11 +338,16 @@ function bindDashboard() {
       const dlBtn = e.target.closest(".download-report-btn");
       if (dlBtn) {
         e.stopPropagation();
+        e.preventDefault();
+        const id = dlBtn.dataset.dlId;
+        const reportNo = dlBtn.dataset.dlNo || "report";
+        await downloadReportFile(id, reportNo);
         return;
       }
       const delBtn = e.target.closest(".del-report-btn");
       if (delBtn) {
         e.stopPropagation();
+        e.preventDefault();
         const reportId = delBtn.dataset.delReport;
         const reportNo = delBtn.dataset.reportNo || "this report";
         showConfirmModal({
@@ -1432,9 +1467,7 @@ async function generateReport() {
       headers: { Authorization: "Bearer " + state.token },
     });
     if (!res.ok) throw new Error("Generation failed");
-    const data = await res.json();
-    window.location.href = data.download_url;
-    toast("Report generated and downloading...");
+    await downloadReportFile(state.currentReport.id, state.currentReport.report_no);
     const r = await api(`/reports/${state.currentReport.id}`);
     state.currentReport = r;
     render();

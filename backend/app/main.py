@@ -14,16 +14,22 @@ from sqlalchemy import text
 Base.metadata.create_all(bind=engine)
 
 def _run_migrations():
-    with engine.begin() as conn:
+    statements = [
+        "ALTER TABLE reports ADD COLUMN IF NOT EXISTS measurement_options JSON DEFAULT '{}';",
+        "ALTER TABLE report_photos ADD COLUMN IF NOT EXISTS image_data BYTEA;",
+    ]
+    for stmt in statements:
         try:
-            conn.execute(text("ALTER TABLE reports ADD COLUMN measurement_options JSON DEFAULT '{}';"))
-        except Exception:
-            pass
-        try:
-            conn.execute(text("ALTER TABLE report_photos ADD COLUMN image_data BYTEA;"))
+            with engine.connect() as conn:
+                conn.execute(text(stmt))
+                conn.commit()
         except Exception:
             try:
-                conn.execute(text("ALTER TABLE report_photos ADD COLUMN image_data BLOB;"))
+                # Fallback for SQLite
+                simple_stmt = stmt.replace(" IF NOT EXISTS", "").replace(" BYTEA", " BLOB")
+                with engine.connect() as conn:
+                    conn.execute(text(simple_stmt))
+                    conn.commit()
             except Exception:
                 pass
 
