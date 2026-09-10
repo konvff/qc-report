@@ -561,16 +561,19 @@ def generate_report(template_path, output_path, data):
 
         defects = data.get("defects", {})
         total_major, total_minor = 0, 0
+        has_defect_entries = False
         for i, label in enumerate(DEFECT_TAXONOMY):
             r = 5 + i
             entry = defects.get(label, {})
             major = entry.get("major", "")
             minor = entry.get("minor", "")
+            if str(major).strip() or str(minor).strip():
+                has_defect_entries = True
             set_cell_text(t.cell(r, 0), str(i + 1))
             set_cell_text(t.cell(r, 1), label)
             set_cell_text(t.cell(r, 2), label)
-            set_cell_text(t.cell(r, 3), major)
-            set_cell_text(t.cell(r, 4), minor)
+            set_cell_text(t.cell(r, 3), str(major) if str(major).strip() else "")
+            set_cell_text(t.cell(r, 4), str(minor) if str(minor).strip() else "")
             try:
                 total_major += int(major) if str(major).strip() else 0
             except ValueError:
@@ -582,17 +585,19 @@ def generate_report(template_path, output_path, data):
 
         allowed_major = meta.get("major_allowed")
         allowed_minor = meta.get("minor_allowed")
-        set_cell_text(t.cell(18, 3), f"{total_major:02d}")
-        set_cell_text(t.cell(18, 4), f"{total_minor:02d}")
-        if allowed_major not in (None, ""):
-            set_cell_text(t.cell(19, 3), allowed_major)
-        if allowed_minor not in (None, ""):
-            set_cell_text(t.cell(19, 4), allowed_minor)
-        try:
-            result_major = "Pass" if allowed_major not in (None, "") and total_major <= int(allowed_major) else "Fail"
-            result_minor = "Pass" if allowed_minor not in (None, "") and total_minor <= int(allowed_minor) else "Fail"
-        except (ValueError, TypeError):
-            result_major = result_minor = "Pending"
+        set_cell_text(t.cell(18, 3), f"{total_major:02d}" if (total_major or has_defect_entries) else "")
+        set_cell_text(t.cell(18, 4), f"{total_minor:02d}" if (total_minor or has_defect_entries) else "")
+        set_cell_text(t.cell(19, 3), str(allowed_major) if allowed_major not in (None, "") else "")
+        set_cell_text(t.cell(19, 4), str(allowed_minor) if allowed_minor not in (None, "") else "")
+        
+        if allowed_major not in (None, "") or allowed_minor not in (None, ""):
+            try:
+                result_major = "Pass" if allowed_major not in (None, "") and total_major <= int(allowed_major) else "Fail"
+                result_minor = "Pass" if allowed_minor not in (None, "") and total_minor <= int(allowed_minor) else "Fail"
+            except (ValueError, TypeError):
+                result_major = result_minor = "Pending"
+        else:
+            result_major = result_minor = ""
         set_cell_text(t.cell(20, 3), result_major)
         set_cell_text(t.cell(20, 4), result_minor)
 
@@ -678,13 +683,13 @@ def generate_report(template_path, output_path, data):
         tables = doc.tables
 
     if "measurements" in data:
-        t = tables[TABLES["measurement_chart"]]
-        # Delete existing rows except the header
-        for row in t.rows[1:]:
-            t._tbl.remove(row._tr)
-            
         m_data = data["measurements"]
-        if isinstance(m_data, list):
+        t = tables[TABLES["measurement_chart"]]
+        if isinstance(m_data, list) and len(m_data) > 0:
+            # Delete existing rows except the header
+            for row in list(t.rows[1:]):
+                t._tbl.remove(row._tr)
+            
             last_desc_cell = None
             last_desc_text = None
             for item in m_data:
@@ -715,10 +720,15 @@ def generate_report(template_path, output_path, data):
                     else:
                         last_desc_text = desc
                         last_desc_cell = r.cells[0]
+        else:
+            # Clear hardcoded template sample values from measurement table rows
+            for row in t.rows[1:]:
+                for cell in row.cells:
+                    set_cell_text(cell, "")
 
     if "measurement_options" in data:
         opt = data["measurement_options"]
-        for p in document.paragraphs:
+        for p in doc.paragraphs:
             if "Buyer Measurement Chart" in p.text:
                 cbs = p._p.xpath('.//w:ffData/w:checkBox')
                 if len(cbs) >= 2:
@@ -745,13 +755,13 @@ def generate_report(template_path, output_path, data):
                 set_cell_text(t.cell(r, 6), entry["remark"])
 
     if "shrinkage" in data:
-        t = tables[TABLES["shrinkage_chart"]]
-        # Delete existing rows except headers (0 and 1)
-        for row in t.rows[2:]:
-            t._tbl.remove(row._tr)
-            
         s_data = data["shrinkage"]
-        if isinstance(s_data, list):
+        t = tables[TABLES["shrinkage_chart"]]
+        if isinstance(s_data, list) and len(s_data) > 0:
+            # Delete existing rows except headers (0 and 1)
+            for row in list(t.rows[2:]):
+                t._tbl.remove(row._tr)
+            
             for item in s_data:
                 if item.get("type") == "header":
                     r = t.add_row()
@@ -763,6 +773,11 @@ def generate_report(template_path, output_path, data):
                     set_cell_text(r.cells[0], str(item.get("before", "")))
                     set_cell_text(r.cells[1], str(item.get("after", "")))
                     set_cell_text(r.cells[2], str(item.get("pct", "")))
+        else:
+            # Clear hardcoded template sample values from shrinkage table rows
+            for row in t.rows[2:]:
+                for cell in row.cells:
+                    set_cell_text(cell, "")
 
     if "marking_labeling" in data:
         t = tables[TABLES["marking_labeling"]]

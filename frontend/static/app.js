@@ -248,6 +248,10 @@ function renderDashboard() {
         </div>
         <div style="display:flex; align-items:center; gap:12px;">
           <span class="badge badge-${r.status}">${statusLabel(r.status)}</span>
+          <a class="btn-secondary download-report-btn" href="/api/reports/${r.id}/download" download style="text-decoration:none; font-size:0.85rem; padding:6px 12px; border-radius:6px; font-weight:600; display:flex; align-items:center; gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </a>
           <button class="icon-btn del-report-btn" data-del-report="${r.id}" data-report-no="${r.report_no}" title="Delete Report" style="color:var(--danger); font-size:0.9rem; padding:6px 12px; border-radius:6px; background:var(--danger-bg); border:1px solid rgba(239,68,68,0.25); cursor:pointer; font-weight:600; display:flex; align-items:center; gap:6px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             Delete
@@ -301,6 +305,11 @@ function bindDashboard() {
   bindTopbarCommon();
   document.querySelectorAll(".report-item").forEach(el => {
     el.addEventListener("click", async (e) => {
+      const dlBtn = e.target.closest(".download-report-btn");
+      if (dlBtn) {
+        e.stopPropagation();
+        return;
+      }
       const delBtn = e.target.closest(".del-report-btn");
       if (delBtn) {
         e.stopPropagation();

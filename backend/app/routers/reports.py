@@ -227,21 +227,32 @@ def delete_photo(photo_id: int, db: Session = Depends(get_db), user: User = Depe
     return {"ok": True}
 
 
-@router.post("/{report_id}/generate")
-def generate(report_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    r = db.query(Report).filter(Report.id == report_id).first()
-    if not r:
-        raise HTTPException(status_code=404, detail="Not found")
-
-    photos = db.query(ReportPhoto).filter(ReportPhoto.report_id == report_id).all()
+def _build_report_file(r: Report, db: Session) -> str:
+    photos = db.query(ReportPhoto).filter(ReportPhoto.report_id == r.id).all()
     photos_by_section: dict[str, list[dict]] = {}
     for p in photos:
         photos_by_section.setdefault(p.section, []).append({
             "row": p.row, "col": p.col, "title": p.title, "path": p.file_path,
         })
 
+    header_info = _ensure_dict(r.header_info)
+    if not header_info.get("report_no"):
+        header_info["report_no"] = r.report_no or ""
+    if not header_info.get("customer_name"):
+        header_info["customer_name"] = r.customer_name or ""
+    if not header_info.get("po_number"):
+        header_info["po_number"] = r.po_number or ""
+
+    m_data = _ensure_dict(r.measurements)
+    if not m_data and isinstance(r.measurements, list):
+        m_data = r.measurements
+
+    s_data = _ensure_dict(r.shrinkage)
+    if not s_data and isinstance(r.shrinkage, list):
+        s_data = r.shrinkage
+
     data = {
-        "header_info": _ensure_dict(r.header_info),
+        "header_info": header_info,
         "product_category": _ensure_dict(r.product_category),
         "po_rows": _ensure_list(r.po_rows),
         "po_comments": _ensure_list(r.po_comments),
@@ -255,16 +266,25 @@ def generate(report_id: int, db: Session = Depends(get_db), user: User = Depends
         "marking_labeling": _ensure_dict(r.marking_labeling),
         "cartons_selected": _ensure_list(r.cartons_selected),
         "upc_verification": _ensure_list(r.upc_verification),
-        "measurements": _ensure_dict(r.measurements),
+        "measurements": m_data,
         "measurement_options": _ensure_dict(getattr(r, "measurement_options", {})),
         "onsite_tests": _ensure_dict(r.onsite_tests),
-        "shrinkage": _ensure_dict(r.shrinkage),
+        "shrinkage": s_data,
         "photos": photos_by_section,
     }
 
     out_path = os.path.join(OUTPUT_DIR, f"report_{r.report_no.replace('/', '-')}.docx")
     generate_report(TEMPLATE_PATH, out_path, data)
+    return out_path
 
+
+@router.post("/{report_id}/generate")
+def generate(report_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    r = db.query(Report).filter(Report.id == report_id).first()
+    if not r:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    out_path = _build_report_file(r, db)
     r.status = ReportStatus.COMPLETED
     db.commit()
 
@@ -275,9 +295,7 @@ def download_report(report_id: int, db: Session = Depends(get_db)):
     r = db.query(Report).filter(Report.id == report_id).first()
     if not r:
         raise HTTPException(status_code=404, detail="Not found")
-    out_path = os.path.join(OUTPUT_DIR, f"report_{r.report_no.replace('/', '-')}.docx")
-    if not os.path.exists(out_path):
-        raise HTTPException(status_code=404, detail="Report not generated yet")
+    out_path = _build_report_file(r, db)
     return FileResponse(
         out_path,
         filename=f"{r.report_no}.docx",

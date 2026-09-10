@@ -16,9 +16,9 @@ Base.metadata.create_all(bind=engine)
 def _run_migrations():
     try:
         with engine.begin() as conn:
-            conn.execute(text("ALTER TABLE reports ADD COLUMN IF NOT EXISTS measurement_options JSON DEFAULT '{}';"))
-    except Exception as e:
-        print(f"Migration notice: {e}")
+            conn.execute(text("ALTER TABLE reports ADD COLUMN measurement_options JSON DEFAULT '{}';"))
+    except Exception:
+        pass
 
 _run_migrations()
 
