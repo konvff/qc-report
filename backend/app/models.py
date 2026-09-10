@@ -1,7 +1,7 @@
 import datetime
 import enum
 from sqlalchemy import (
-    Column, Integer, String, DateTime, ForeignKey, Text, Enum, JSON, Boolean
+    Column, Integer, String, DateTime, ForeignKey, Text, Enum, JSON, Boolean, LargeBinary
 )
 from sqlalchemy.orm import relationship, declarative_base
 
@@ -89,6 +89,7 @@ class ReportPhoto(Base):
     col = Column(Integer, nullable=False, default=0)
     title = Column(String, nullable=True)
     file_path = Column(String, nullable=False)
+    image_data = Column(LargeBinary, nullable=True)
     uploaded_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     report = relationship("Report", back_populates="photos")

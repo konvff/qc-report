@@ -178,18 +178,27 @@ async def upload_photo(
     ).first()
     if existing:
         if os.path.exists(existing.file_path):
-            os.remove(existing.file_path)
+            try: os.remove(existing.file_path)
+            except Exception: pass
         db.delete(existing)
         db.flush()
 
+    contents = await file.read()
     ext = os.path.splitext(file.filename)[1] or ".jpg"
     fname = f"{report_id}_{section}_{row}_{col}_{uuid.uuid4().hex}{ext}"
     fpath = os.path.join(UPLOAD_DIR, fname)
     with open(fpath, "wb") as out:
-        shutil.copyfileobj(file.file, out)
+        out.write(contents)
 
-    photo = ReportPhoto(report_id=report_id, section=section, row=row, col=col,
-                         title=title, file_path=fpath)
+    photo = ReportPhoto(
+        report_id=report_id,
+        section=section,
+        row=row,
+        col=col,
+        title=title,
+        file_path=fpath,
+        image_data=contents,
+    )
     db.add(photo)
     db.commit()
     db.refresh(photo)
@@ -210,9 +219,23 @@ def update_photo_title(photo_id: int, title: str = Form(...), db: Session = Depe
 @router.get("/photo/{photo_id}")
 def get_photo(photo_id: int, db: Session = Depends(get_db)):
     p = db.query(ReportPhoto).filter(ReportPhoto.id == photo_id).first()
-    if not p or not os.path.exists(p.file_path):
+    if not p:
         raise HTTPException(status_code=404, detail="Not found")
-    return FileResponse(p.file_path)
+
+    if os.path.exists(p.file_path):
+        return FileResponse(p.file_path)
+
+    if p.image_data:
+        try:
+            os.makedirs(os.path.dirname(p.file_path), exist_ok=True)
+            with open(p.file_path, "wb") as out:
+                out.write(p.image_data)
+        except Exception:
+            pass
+        from fastapi import Response
+        return Response(content=p.image_data, media_type="image/jpeg")
+
+    raise HTTPException(status_code=404, detail="Not found")
 
 
 @router.delete("/photo/{photo_id}")
@@ -221,7 +244,8 @@ def delete_photo(photo_id: int, db: Session = Depends(get_db), user: User = Depe
     if not p:
         raise HTTPException(status_code=404, detail="Not found")
     if os.path.exists(p.file_path):
-        os.remove(p.file_path)
+        try: os.remove(p.file_path)
+        except Exception: pass
     db.delete(p)
     db.commit()
     return {"ok": True}
@@ -231,6 +255,15 @@ def _build_report_file(r: Report, db: Session) -> str:
     photos = db.query(ReportPhoto).filter(ReportPhoto.report_id == r.id).all()
     photos_by_section: dict[str, list[dict]] = {}
     for p in photos:
+        # Restore file to disk from DB if missing on live container
+        if not os.path.exists(p.file_path) and p.image_data:
+            try:
+                os.makedirs(os.path.dirname(p.file_path), exist_ok=True)
+                with open(p.file_path, "wb") as out:
+                    out.write(p.image_data)
+            except Exception:
+                pass
+
         photos_by_section.setdefault(p.section, []).append({
             "row": p.row, "col": p.col, "title": p.title, "path": p.file_path,
         })

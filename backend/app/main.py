@@ -14,11 +14,18 @@ from sqlalchemy import text
 Base.metadata.create_all(bind=engine)
 
 def _run_migrations():
-    try:
-        with engine.begin() as conn:
+    with engine.begin() as conn:
+        try:
             conn.execute(text("ALTER TABLE reports ADD COLUMN measurement_options JSON DEFAULT '{}';"))
-    except Exception:
-        pass
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE report_photos ADD COLUMN image_data BYTEA;"))
+        except Exception:
+            try:
+                conn.execute(text("ALTER TABLE report_photos ADD COLUMN image_data BLOB;"))
+            except Exception:
+                pass
 
 _run_migrations()
 
