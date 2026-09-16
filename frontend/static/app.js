@@ -622,12 +622,16 @@ function showNewReportModal() {
       }
 
       const r = await api("/reports", { method: "POST", body: JSON.stringify(payload) });
-      toast("Report created and pre-filled with extracted data!");
+      toast(`Report ${r.report_no} created and pre-filled!`);
       closeModal();
       await loadDashboardData();
       await openReport(r.id);
     } catch (err) {
       toast(err.message);
+      if (statusBox) {
+        statusBox.style.display = "block";
+        statusBox.innerHTML = `<div style="color:var(--danger); background:var(--danger-bg); padding:10px 14px; border-radius:10px; font-size:0.85rem; margin-bottom:16px; border:1px solid rgba(239,68,68,0.2);">Failed to create report: ${err.message}</div>`;
+      }
     }
   });
 }

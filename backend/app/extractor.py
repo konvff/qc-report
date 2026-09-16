@@ -125,18 +125,29 @@ def parse_document_content(raw_text: str) -> Dict[str, Any]:
     full_text = "\n".join(lines)
 
     # 1. Dynamically Extract PO Number & Customer Document No
-    po_match = re.search(r'(?:Purchase\s*Order|PO\s*No\.?|PO\s*#?|Order\s*No\.?)\s*[:\-\s]*([A-Z0-9\-]+)', full_text, re.IGNORECASE)
-    cust_doc_match = re.search(r'Customer\s*Document\s*No\.?\s*[:\-\s]*([A-Z0-9\-]+)', full_text, re.IGNORECASE)
+    po_match = re.search(r'\b(?:Purchase\s*Order(?:\s*No\.?|\s*#)?|\bPO\s*No\.?|\bPO\s*#|\bOrder\s*No\.?)\s*[:\-\s]*([A-Z0-9\-]+)', full_text, re.IGNORECASE)
+    cust_doc_match = re.search(r'\bCustomer\s*Document\s*No\.?\s*[:\-\s]*([A-Z0-9\-]+)', full_text, re.IGNORECASE)
     
+    def is_valid_po(val: str) -> bool:
+        if not val or len(val) < 3:
+            return False
+        if val.lower() in ("rt", "sea", "air", "date", "terms", "dock", "method"):
+            return False
+        return True
+
     po_number = ""
-    if po_match:
+    if po_match and is_valid_po(po_match.group(1).strip()):
         po_number = po_match.group(1).strip()
-    elif cust_doc_match:
+    elif cust_doc_match and is_valid_po(cust_doc_match.group(1).strip()):
         po_number = cust_doc_match.group(1).strip()
     else:
         gen_po = re.search(r'\b([A-Z]{1,4}\-?PO\d+|\bPO\d{4,10}|\bPO\-\d+)\b', full_text, re.IGNORECASE)
-        if gen_po:
+        if gen_po and is_valid_po(gen_po.group(1).strip()):
             po_number = gen_po.group(1).strip()
+        elif po_match and is_valid_po(po_match.group(1).strip()):
+            po_number = po_match.group(1).strip()
+        elif cust_doc_match and is_valid_po(cust_doc_match.group(1).strip()):
+            po_number = cust_doc_match.group(1).strip()
 
     result["po_number"] = po_number
     if po_number:
@@ -147,17 +158,20 @@ def parse_document_content(raw_text: str) -> Dict[str, Any]:
 
     # 2. Dynamically Extract Customer / Buyer Name
     customer_name = ""
-    customer_label_match = re.search(r'(?:Customer|Buyer|Consignee|Client|Bill-to)\s*[:\-\s]*\n?([^\n]+)', full_text, re.IGNORECASE)
-    ship_to_match = re.search(r'Ship-to\s*(?:Address)?\s*[:\-\s]*\n?([^\n]+)', full_text, re.IGNORECASE)
-    bjorna_match = re.search(r'(Bjorna\s*ApS|BJÖRNA\s*ApS|BJÖRNA)', full_text, re.IGNORECASE)
+    bjorna_match = re.search(r'\b(Bjorna\s*ApS|BJÖRNA\s*ApS|BJÖRNA|Bjorna)\b', full_text, re.IGNORECASE)
+    customer_label_match = re.search(r'\b(?:Customer(?!\s*Document\s*No)|Buyer|Consignee|Client|Bill-to)\s*[:\-\s]*\n?([^\n]+)', full_text, re.IGNORECASE)
+    ship_to_match = re.search(r'\bShip-to\s*(?:Address)?\s*[:\-\s]*\n?([^\n]+)', full_text, re.IGNORECASE)
     
-    if customer_label_match:
-        customer_name = customer_label_match.group(1).strip()
-    elif ship_to_match:
-        customer_name = ship_to_match.group(1).strip()
-    elif bjorna_match:
+    if bjorna_match:
         customer_name = bjorna_match.group(1).strip()
-    else:
+    elif customer_label_match:
+        c_cand = customer_label_match.group(1).strip()
+        c_cand = re.split(r'\b(?:Order\s*Date|Document\s*No|Date)\b', c_cand, flags=re.IGNORECASE)[0].strip()
+        if c_cand:
+            customer_name = c_cand
+    if not customer_name and ship_to_match:
+        customer_name = ship_to_match.group(1).strip()
+    if not customer_name:
         comp_match = re.search(r'\b([A-Z0-9\s\&]{3,40}\s+(?:AB|ApS|Ltd|LLC|Inc|GmbH|Co|Corp|AS))\b', full_text)
         if comp_match:
             customer_name = comp_match.group(1).strip()

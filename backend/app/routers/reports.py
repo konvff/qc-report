@@ -119,9 +119,19 @@ async def extract_document(
 
 @router.post("", response_model=ReportOut)
 def create_report(payload: ReportCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    if db.query(Report).filter(Report.report_no == payload.report_no).first():
-        raise HTTPException(status_code=400, detail="Report number already exists")
-    
+    report_no = (payload.report_no or "").strip()
+    if not report_no:
+        raise HTTPException(status_code=400, detail="Report number is required")
+
+    base_no = report_no
+    counter = 1
+    while db.query(Report).filter(Report.report_no == report_no).first():
+        report_no = f"{base_no}-{counter}"
+        counter += 1
+
+    header_info = payload.header_info or {}
+    header_info["report_no"] = report_no
+
     default_lab_test = {
         "lab_test_exist": {"mark": "yes", "remark": ""},
         "lab_report_reviewed": {"mark": "yes", "remark": ""},
@@ -130,14 +140,14 @@ def create_report(payload: ReportCreate, db: Session = Depends(get_db), user: Us
         "result": {"mark": "yes", "remark": ""},
     }
     r = Report(
-        report_no=payload.report_no,
+        report_no=report_no,
         factory_id=payload.factory_id,
         customer_name=payload.customer_name,
         po_number=payload.po_number,
         created_by_id=user.id,
         assigned_qc_id=payload.assigned_qc_id,
         status=ReportStatus.DRAFT,
-        header_info=payload.header_info or {},
+        header_info=header_info,
         product_category=payload.product_category or {},
         po_rows=payload.po_rows or [],
         upc_verification=payload.upc_verification or [],
