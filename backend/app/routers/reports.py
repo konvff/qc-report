@@ -25,6 +25,8 @@ from ..models import Report, ReportPhoto, ReportStatus, User
 from ..auth import get_current_user
 from ..generator import generate_report, discover_photo_slots, DEFECT_TAXONOMY
 
+from ..extractor import extract_data_from_file, extract_data_from_multiple_files
+
 router = APIRouter(prefix="/api/reports", tags=["reports"])
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
@@ -55,6 +57,14 @@ class ReportCreate(BaseModel):
     customer_name: str | None = None
     po_number: str | None = None
     assigned_qc_id: int | None = None
+    header_info: dict | None = None
+    product_category: dict | None = None
+    po_rows: list | None = None
+    upc_verification: list | None = None
+    standards_reference: dict | None = None
+    packing_matrix: dict | None = None
+    lab_test: dict | None = None
+    aql_rows: list | None = None
 
 
 class ReportOut(BaseModel):
@@ -82,10 +92,43 @@ def get_photo_slots(_user: User = Depends(get_current_user)):
     return {"slots": PHOTO_SLOTS, "defect_taxonomy": DEFECT_TAXONOMY}
 
 
+@router.post("/extract-document")
+async def extract_document(
+    file: UploadFile | None = File(None),
+    files: list[UploadFile] | None = File(None),
+    _user: User = Depends(get_current_user)
+):
+    """Parse uploaded Purchase Order PDF(s) and/or Packing List image(s) and return merged inspection data."""
+    all_files = []
+    if files:
+        all_files.extend(files)
+    if file:
+        all_files.append(file)
+    
+    if not all_files:
+        raise HTTPException(status_code=400, detail="No file provided")
+
+    files_list = []
+    for f in all_files:
+        content = await f.read()
+        files_list.append((content, f.filename or "document.pdf"))
+
+    data = extract_data_from_multiple_files(files_list)
+    return data
+
+
 @router.post("", response_model=ReportOut)
 def create_report(payload: ReportCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     if db.query(Report).filter(Report.report_no == payload.report_no).first():
         raise HTTPException(status_code=400, detail="Report number already exists")
+    
+    default_lab_test = {
+        "lab_test_exist": {"mark": "yes", "remark": ""},
+        "lab_report_reviewed": {"mark": "yes", "remark": ""},
+        "lab_report_per_protocols": {"mark": "yes", "remark": ""},
+        "any_deviation": {"mark": "yes", "remark": ""},
+        "result": {"mark": "yes", "remark": ""},
+    }
     r = Report(
         report_no=payload.report_no,
         factory_id=payload.factory_id,
@@ -94,6 +137,14 @@ def create_report(payload: ReportCreate, db: Session = Depends(get_db), user: Us
         created_by_id=user.id,
         assigned_qc_id=payload.assigned_qc_id,
         status=ReportStatus.DRAFT,
+        header_info=payload.header_info or {},
+        product_category=payload.product_category or {},
+        po_rows=payload.po_rows or [],
+        upc_verification=payload.upc_verification or [],
+        standards_reference=payload.standards_reference or {},
+        packing_matrix=payload.packing_matrix or {},
+        lab_test=payload.lab_test or default_lab_test,
+        aql_rows=payload.aql_rows or [],
     )
     db.add(r)
     db.commit()

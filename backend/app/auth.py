@@ -18,11 +18,24 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    pwd_bytes = password.encode('utf-8')[:72]
+    try:
+        return pwd_context.hash(pwd_bytes.decode('utf-8', errors='ignore'))
+    except Exception:
+        import bcrypt as _bc
+        return _bc.hashpw(pwd_bytes, _bc.gensalt()).decode('utf-8')
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    pwd_bytes = plain.encode('utf-8')[:72]
+    try:
+        return pwd_context.verify(pwd_bytes.decode('utf-8', errors='ignore'), hashed)
+    except Exception:
+        import bcrypt as _bc
+        try:
+            return _bc.checkpw(pwd_bytes, hashed.encode('utf-8'))
+        except Exception:
+            return False
 
 
 def create_access_token(data: dict) -> str:

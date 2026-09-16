@@ -156,14 +156,24 @@ function bindLogin() {
 
 // ---------------- TOPBAR ----------------
 function renderTopbar() {
+  const name = state.user?.name || "User";
+  const userInitial = name.charAt(0).toUpperCase();
   return `
   <div class="topbar">
-    <div class="brand"><img src="/static/logo2.png" style="height: 32px; object-fit: contain;" alt="Logo"> QC Inspection Reports</div>
+    <div class="brand">
+      <img src="/static/logo2.png" alt="Company Logo">
+      <span>QC Inspection Platform</span>
+    </div>
     <div class="user-info">
-      <span>${state.user.name}</span>
-      <span class="user-role">${state.user.role}</span>
-      <button class="link" id="change-pwd-btn">Change password</button>
-      <button class="link" id="logout-btn">Sign out</button>
+      <div class="user-avatar">${userInitial}</div>
+      <div style="display:flex; flex-direction:column; line-height:1.2;">
+        <span style="font-weight:700; color:var(--text-primary);">${name}</span>
+        <span style="font-size:0.75rem; color:var(--text-muted);">${state.user?.email || ""}</span>
+      </div>
+      <span class="user-role">${state.user?.role || "qc"}</span>
+      <div style="height:20px; width:1px; background:var(--border-color); margin:0 4px;"></div>
+      <button class="link" id="change-pwd-btn">Password</button>
+      <button class="link" id="logout-btn" style="color:var(--danger);">Sign out</button>
     </div>
   </div>`;
 }
@@ -238,67 +248,388 @@ function statusLabel(s) {
 }
 
 function renderDashboard() {
-  const factoryOptions = state.factories.map(f => `<option value="${f.id}">${f.name}</option>`).join("");
+  const totalReports = state.reports.length;
+  const draftCount = state.reports.filter(r => r.status === "draft").length;
+  const inProgressCount = state.reports.filter(r => r.status === "qc_in_progress").length;
+  const completedCount = state.reports.filter(r => r.status === "completed").length;
+
+  const statsHtml = `
+    <div class="stats-overview">
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-indigo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div>
+          <div class="stat-value">${totalReports}</div>
+          <div class="stat-label">Total Reports</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-amber">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <div>
+          <div class="stat-value">${draftCount}</div>
+          <div class="stat-label">Drafts Pending</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-sky">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <div class="stat-value">${inProgressCount}</div>
+          <div class="stat-label">QC In Progress</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-emerald">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div>
+          <div class="stat-value">${completedCount}</div>
+          <div class="stat-label">Completed</div>
+        </div>
+      </div>
+    </div>
+  `;
+
   const items = state.reports.length
     ? state.reports.map(r => `
-      <div class="report-item" data-id="${r.id}" style="display:flex; align-items:center; justify-content:space-between; gap:16px; cursor:pointer;">
-        <div>
-          <div><strong>${r.report_no}</strong></div>
-          <div class="meta">${r.customer_name || "—"} · PO ${r.po_number || "—"}</div>
+      <div class="report-item" data-id="${r.id}">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div style="width:44px; height:44px; border-radius:12px; background:var(--bg-tertiary); display:grid; place-content:center; color:var(--accent-primary); flex-shrink:0;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <div>
+            <div><strong>${r.report_no}</strong></div>
+            <div class="meta">${r.customer_name || "—"} · PO ${r.po_number || "—"}</div>
+          </div>
         </div>
         <div style="display:flex; align-items:center; gap:12px;">
           <span class="badge badge-${r.status}">${statusLabel(r.status)}</span>
-          <button class="btn-secondary download-report-btn" data-dl-id="${r.id}" data-dl-no="${r.report_no}" style="font-size:0.85rem; padding:6px 12px; border-radius:6px; font-weight:600; display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <button class="btn-secondary download-report-btn" data-dl-id="${r.id}" data-dl-no="${r.report_no}" style="font-size:0.85rem; padding:7px 14px; border-radius:8px; font-weight:600; cursor:pointer;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Download
           </button>
-          <button class="icon-btn del-report-btn" data-del-report="${r.id}" data-report-no="${r.report_no}" title="Delete Report" style="color:var(--danger); font-size:0.9rem; padding:6px 12px; border-radius:6px; background:var(--danger-bg); border:1px solid rgba(239,68,68,0.25); cursor:pointer; font-weight:600; display:flex; align-items:center; gap:6px;">
+          <button class="icon-btn del-report-btn" data-del-report="${r.id}" data-report-no="${r.report_no}" title="Delete Report" style="color:var(--danger); font-size:0.88rem; padding:7px 14px; border-radius:8px; background:var(--danger-bg); border:1px solid rgba(239,68,68,0.2); cursor:pointer; font-weight:600; display:flex; align-items:center; gap:6px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             Delete
           </button>
         </div>
       </div>
     `).join("")
-    : `<div class="empty-state">No reports yet. Create the first one below.</div>`;
+    : `<div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-muted);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <h3>No inspection reports found</h3>
+        <p>Click "+ New report" above to upload a PO document and auto-generate your report!</p>
+      </div>`;
 
   return `
   <div class="container">
+    ${statsHtml}
     <div class="toolbar">
-      <h1>Reports</h1>
-      <button class="btn-primary" id="new-report-btn">+ New report</button>
+      <div>
+        <h1 style="font-size:1.6rem; font-weight:800;">Inspection Reports</h1>
+        <p style="color:var(--text-secondary); font-size:0.9rem; margin-top:2px;">Manage inspection drafts, QC findings, and document generation.</p>
+      </div>
+      <button class="btn-primary" id="new-report-btn" style="display:inline-flex; align-items:center; gap:8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        + New report
+      </button>
     </div>
     ${items}
-
-    <div class="card" id="new-report-card" style="display:none; margin-top:20px;">
-      <h2>New inspection report</h2>
-      <label>Report No.</label>
-      <input type="text" id="nr-report-no" placeholder="e.g. Bjorna-FRI-2026-79">
-      <div class="grid2">
-        <div>
-          <label>Customer name</label>
-          <input type="text" id="nr-customer">
-        </div>
-        <div>
-          <label>PO number</label>
-          <input type="text" id="nr-po">
-        </div>
-      </div>
-      <label>Factory</label>
-      <select id="nr-factory">
-        <option value="">— Select factory —</option>
-        ${factoryOptions}
-        <option value="__new__">+ Add new factory…</option>
-      </select>
-      <div id="nr-new-factory-wrap" style="display:none;">
-        <label>New factory name</label>
-        <input type="text" id="nr-new-factory-name">
-      </div>
-      <div class="row-actions">
-        <button class="btn-primary" id="nr-submit">Create report</button>
-        <button class="btn-secondary" id="nr-cancel">Cancel</button>
-      </div>
-    </div>
   </div>`;
+}
+
+function showNewReportModal() {
+  const factoryOptions = state.factories.map(f => `<option value="${f.id}">${f.name}</option>`).join("");
+  let poFile = null;
+  let packingFile = null;
+  let extractedPayload = null;
+
+  const modal = document.createElement("div");
+  modal.className = "modal-overlay";
+  modal.innerHTML = `
+    <div class="modal-card modal-card-lg">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border-color); padding-bottom:16px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <img src="/static/logo2.png" style="height:32px; object-fit:contain;" alt="Logo">
+          <div>
+            <h2 style="margin:0; font-size:1.3rem; font-weight:800; color:var(--text-primary);">Create Inspection Report</h2>
+            <span style="font-size:0.8rem; color:var(--text-muted);">Upload Purchase Order & Packing List to auto-fill all details</span>
+          </div>
+        </div>
+        <button class="icon-btn" id="modal-close-x" style="font-size:1.1rem; cursor:pointer; width:32px; height:32px; border-radius:50%; background:var(--bg-tertiary); border:none; display:grid; place-content:center;">✕</button>
+      </div>
+
+      <!-- Two Upload Inputs Grid -->
+      <div class="grid2" style="margin-bottom:16px;">
+        <!-- Input 1: Purchase Order PDF -->
+        <div>
+          <label style="font-weight:700; color:var(--text-primary); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            1. Purchase Order (PDF / Doc)
+          </label>
+          <input type="file" id="modal-po-input" accept=".pdf,.docx,.doc" style="display:none;">
+          <div class="upload-dropzone" id="modal-po-dropzone" style="padding:18px 14px; min-height:110px; display:flex; flex-direction:column; justify-content:center;">
+            <p id="po-drop-title" style="font-size:0.88rem; margin:0 0 2px 0;">📄 Upload PO Document</p>
+            <span id="po-drop-sub" style="font-size:0.75rem;">Auto-extracts Customer, Factory, PO#, & Dates</span>
+          </div>
+        </div>
+
+        <!-- Input 2: Packing List & Barcodes JPEG -->
+        <div>
+          <label style="font-weight:700; color:var(--text-primary); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            2. Packing List & Barcodes (JPEG / Image)
+          </label>
+          <input type="file" id="modal-packing-input" accept=".jpg,.jpeg,.png,.webp" style="display:none;">
+          <div class="upload-dropzone" id="modal-packing-dropzone" style="padding:18px 14px; min-height:110px; display:flex; flex-direction:column; justify-content:center;">
+            <p id="packing-drop-title" style="font-size:0.88rem; margin:0 0 2px 0;">📦 Upload Packing List Image</p>
+            <span id="packing-drop-sub" style="font-size:0.75rem;">Auto-extracts PO Rows, Quantities, & Barcode SKUs</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="extraction-status" style="display:none;"></div>
+
+      <form id="new-report-form">
+        <div class="input-group">
+          <label>Report No. <span style="color:var(--danger);">*</span></label>
+          <input type="text" id="mnr-report-no" placeholder="e.g. Bjorna-B-PO13696" required>
+        </div>
+
+        <div class="grid2">
+          <div class="input-group">
+            <label>Customer Name</label>
+            <input type="text" id="mnr-customer" placeholder="e.g. Björna ApS">
+          </div>
+          <div class="input-group">
+            <label>PO Number</label>
+            <input type="text" id="mnr-po" placeholder="e.g. B-PO13696">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Factory / Supplier</label>
+          <select id="mnr-factory">
+            <option value="">— Select factory —</option>
+            ${factoryOptions}
+            <option value="__new__">+ Add new factory…</option>
+          </select>
+        </div>
+        <div id="mnr-new-factory-wrap" class="input-group" style="display:none;">
+          <label>New Factory Name</label>
+          <input type="text" id="mnr-new-factory-name" placeholder="Enter factory name">
+        </div>
+
+        <!-- Preview of Extracted PO Rows & Barcode SKUs -->
+        <div id="extracted-preview-container" style="display:none;" class="extracted-preview-box">
+          <div class="extracted-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Auto-Extracted PO Rows & Barcode SKUs
+          </div>
+          <div id="extracted-items-list" style="font-size:0.85rem; max-height:160px; overflow-y:auto;"></div>
+        </div>
+
+        <div class="modal-actions" style="margin-top:24px; justify-content:flex-end; gap:12px; border-top:1px solid var(--border-color); padding-top:20px;">
+          <button type="button" class="btn-secondary" id="mnr-cancel">Cancel</button>
+          <button type="submit" class="btn-primary" id="mnr-submit">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Create & Auto-Fill Report
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const closeModal = () => {
+    modal.style.opacity = "0";
+    modal.style.transition = "opacity 0.2s ease";
+    setTimeout(() => { if (modal.parentNode) modal.parentNode.removeChild(modal); }, 200);
+  };
+
+  modal.querySelector("#modal-close-x").addEventListener("click", closeModal);
+  modal.querySelector("#mnr-cancel").addEventListener("click", closeModal);
+
+  modal.querySelector("#mnr-factory").addEventListener("change", (e) => {
+    modal.querySelector("#mnr-new-factory-wrap").style.display = e.target.value === "__new__" ? "block" : "none";
+  });
+
+  const poDropzone = modal.querySelector("#modal-po-dropzone");
+  const poInput = modal.querySelector("#modal-po-input");
+  const packingDropzone = modal.querySelector("#modal-packing-dropzone");
+  const packingInput = modal.querySelector("#modal-packing-input");
+  const statusBox = modal.querySelector("#extraction-status");
+
+  poDropzone.addEventListener("click", () => poInput.click());
+  packingDropzone.addEventListener("click", () => packingInput.click());
+
+  poInput.addEventListener("change", () => {
+    if (poInput.files && poInput.files[0]) {
+      poFile = poInput.files[0];
+      modal.querySelector("#po-drop-title").innerHTML = `✅ ${poFile.name}`;
+      runExtraction();
+    }
+  });
+
+  packingInput.addEventListener("change", () => {
+    if (packingInput.files && packingInput.files[0]) {
+      packingFile = packingInput.files[0];
+      modal.querySelector("#packing-drop-title").innerHTML = `✅ ${packingFile.name}`;
+      runExtraction();
+    }
+  });
+
+  // Drag & drop handlers for PO
+  poDropzone.addEventListener("dragover", (e) => { e.preventDefault(); poDropzone.classList.add("dragover"); });
+  poDropzone.addEventListener("dragleave", () => poDropzone.classList.remove("dragover"));
+  poDropzone.addEventListener("drop", (e) => {
+    e.preventDefault(); poDropzone.classList.remove("dragover");
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      poFile = e.dataTransfer.files[0];
+      modal.querySelector("#po-drop-title").innerHTML = `✅ ${poFile.name}`;
+      runExtraction();
+    }
+  });
+
+  // Drag & drop handlers for Packing JPEG
+  packingDropzone.addEventListener("dragover", (e) => { e.preventDefault(); packingDropzone.classList.add("dragover"); });
+  packingDropzone.addEventListener("dragleave", () => packingDropzone.classList.remove("dragover"));
+  packingDropzone.addEventListener("drop", (e) => {
+    e.preventDefault(); packingDropzone.classList.remove("dragover");
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      packingFile = e.dataTransfer.files[0];
+      modal.querySelector("#packing-drop-title").innerHTML = `✅ ${packingFile.name}`;
+      runExtraction();
+    }
+  });
+
+  async function runExtraction() {
+    const filesToExtract = [];
+    if (poFile) filesToExtract.push(poFile);
+    if (packingFile) filesToExtract.push(packingFile);
+    if (filesToExtract.length === 0) return;
+
+    statusBox.style.display = "block";
+    statusBox.innerHTML = `
+      <div style="display:flex; align-items:center; gap:12px; color:var(--accent-primary); background:rgba(79,70,229,0.06); padding:12px 16px; border-radius:12px; margin-bottom:16px; border:1px solid rgba(79,70,229,0.15);">
+        <div class="loading" style="padding:0; background:none; border:none; width:20px; height:20px;"></div>
+        <span style="font-weight:600; font-size:0.88rem;">Parsing ${filesToExtract.length} uploaded file(s)...</span>
+      </div>
+    `;
+
+    try {
+      const formData = new FormData();
+      filesToExtract.forEach(f => formData.append("files", f));
+
+      const extracted = await api("/reports/extract-document", {
+        method: "POST",
+        body: formData
+      });
+      extractedPayload = extracted;
+
+      // Pre-fill inputs
+      if (extracted.report_no) modal.querySelector("#mnr-report-no").value = extracted.report_no;
+      if (extracted.customer_name) modal.querySelector("#mnr-customer").value = extracted.customer_name;
+      if (extracted.po_number) modal.querySelector("#mnr-po").value = extracted.po_number;
+
+      // Pre-fill / select factory
+      if (extracted.factory_name) {
+        const facSelect = modal.querySelector("#mnr-factory");
+        const match = state.factories.find(f => f.name.toLowerCase().includes(extracted.factory_name.toLowerCase()) || extracted.factory_name.toLowerCase().includes(f.name.toLowerCase()));
+        if (match) {
+          facSelect.value = match.id;
+          modal.querySelector("#mnr-new-factory-wrap").style.display = "none";
+        } else {
+          facSelect.value = "__new__";
+          modal.querySelector("#mnr-new-factory-wrap").style.display = "block";
+          modal.querySelector("#mnr-new-factory-name").value = extracted.factory_name;
+        }
+      }
+
+      // Render Extracted Preview
+      const previewContainer = modal.querySelector("#extracted-preview-container");
+      const itemsList = modal.querySelector("#extracted-items-list");
+      previewContainer.style.display = "block";
+
+      const poRows = extracted.po_rows || [];
+      if (poRows.length > 0) {
+        itemsList.innerHTML = poRows.map(r => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.06);">
+            <div>
+              <strong style="color:var(--text-primary); font-size:0.88rem;">${r.item_description}</strong>
+              <div style="color:var(--text-muted); font-size:0.78rem;">Size: ${r.size || "Standard"}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="sku-badge" title="Extracted Barcode as SKU">SKU: ${r.sku}</span>
+              <span style="font-weight:700; color:var(--text-secondary); font-size:0.82rem;">Qty: ${r.po_qty}</span>
+            </div>
+          </div>
+        `).join("");
+      } else {
+        itemsList.innerHTML = `<div style="padding:6px 0; color:var(--text-muted);">Extracted document header and metadata successfully.</div>`;
+      }
+
+      statusBox.innerHTML = `
+        <div style="color:#059669; background:var(--success-bg); padding:10px 14px; border-radius:10px; font-weight:600; font-size:0.85rem; margin-bottom:16px; display:flex; align-items:center; gap:8px; border:1px solid rgba(16,185,129,0.2);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Extracted Customer, Factory, ${poRows.length} PO Item(s) & Barcode SKUs from ${filesToExtract.length} file(s)!
+        </div>
+      `;
+    } catch (e) {
+      statusBox.innerHTML = `<div style="color:var(--danger); background:var(--danger-bg); padding:10px 14px; border-radius:10px; font-size:0.85rem; margin-bottom:16px; border:1px solid rgba(239,68,68,0.2);">Extraction failed: ${e.message}</div>`;
+    }
+  }
+
+  modal.querySelector("#new-report-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      let factoryId = modal.querySelector("#mnr-factory").value;
+      if (factoryId === "__new__") {
+        const name = modal.querySelector("#mnr-new-factory-name").value.trim();
+        if (!name) { toast("Enter a factory name"); return; }
+        const f = await api("/factories", { method: "POST", body: JSON.stringify({ name }) });
+        factoryId = f.id;
+      }
+      const reportNo = modal.querySelector("#mnr-report-no").value.trim();
+      if (!reportNo) { toast("Report number is required"); return; }
+
+      const payload = {
+        report_no: reportNo,
+        customer_name: modal.querySelector("#mnr-customer").value,
+        po_number: modal.querySelector("#mnr-po").value,
+        factory_id: factoryId ? parseInt(factoryId) : null,
+      };
+
+      if (extractedPayload) {
+        payload.header_info = extractedPayload.header_info;
+        if (payload.header_info) {
+          payload.header_info.report_no = reportNo;
+          payload.header_info.customer_name = payload.customer_name;
+          payload.header_info.po_number = payload.po_number;
+        }
+        payload.product_category = extractedPayload.product_category;
+        payload.po_rows = extractedPayload.po_rows;
+        payload.upc_verification = extractedPayload.upc_verification;
+        payload.standards_reference = extractedPayload.standards_reference;
+        payload.packing_matrix = extractedPayload.packing_matrix;
+        payload.lab_test = extractedPayload.lab_test;
+        payload.aql_rows = extractedPayload.aql_rows;
+      }
+
+      const r = await api("/reports", { method: "POST", body: JSON.stringify(payload) });
+      toast("Report created and pre-filled with extracted data!");
+      closeModal();
+      await loadDashboardData();
+      await openReport(r.id);
+    } catch (err) {
+      toast(err.message);
+    }
+  });
 }
 
 async function downloadReportFile(reportId, reportNo) {
@@ -372,38 +703,7 @@ function bindDashboard() {
     });
   });
   const newBtn = document.getElementById("new-report-btn");
-  const card = document.getElementById("new-report-card");
-  newBtn.addEventListener("click", () => { card.style.display = "block"; newBtn.style.display = "none"; });
-  document.getElementById("nr-cancel").addEventListener("click", () => { card.style.display = "none"; newBtn.style.display = "inline-block"; });
-
-  document.getElementById("nr-factory").addEventListener("change", (e) => {
-    document.getElementById("nr-new-factory-wrap").style.display = e.target.value === "__new__" ? "block" : "none";
-  });
-
-  document.getElementById("nr-submit").addEventListener("click", async () => {
-    try {
-      let factoryId = document.getElementById("nr-factory").value;
-      if (factoryId === "__new__") {
-        const name = document.getElementById("nr-new-factory-name").value.trim();
-        if (!name) { toast("Enter a factory name"); return; }
-        const f = await api("/factories", { method: "POST", body: JSON.stringify({ name }) });
-        factoryId = f.id;
-      }
-      const reportNo = document.getElementById("nr-report-no").value.trim();
-      if (!reportNo) { toast("Report number is required"); return; }
-      const payload = {
-        report_no: reportNo,
-        customer_name: document.getElementById("nr-customer").value,
-        po_number: document.getElementById("nr-po").value,
-        factory_id: factoryId ? parseInt(factoryId) : null,
-      };
-      const r = await api("/reports", { method: "POST", body: JSON.stringify(payload) });
-      toast("Report created");
-      await openReport(r.id);
-    } catch (e) {
-      toast(e.message);
-    }
-  });
+  if (newBtn) newBtn.addEventListener("click", showNewReportModal);
 }
 
 async function openReport(id) {
@@ -550,10 +850,18 @@ function renderProductTab() {
     ${canEdit ? `<div class="row-actions"><button class="btn-primary" id="save-product-category">Save</button></div>` : ""}
   </div>
   <div class="card">
-    <h2>PO Details ${canEdit ? "" : "(admin only)"}</h2>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h2 style="margin:0;">PO Details ${canEdit ? "" : "(admin only)"}</h2>
+      ${canEdit ? `
+      <label class="btn-secondary" style="margin:0; cursor:pointer; font-size:0.85rem; padding:6px 12px; display:inline-flex; align-items:center; gap:6px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import PO / Barcode SKUs
+        <input type="file" id="extract-doc-in-wizard" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none;">
+      </label>` : ""}
+    </div>
     <div class="row-table-wrap">
       <table class="row-table" id="po-table">
-        <thead><tr><th>PO#</th><th>SKU</th><th>Description</th><th>Color</th><th>Size</th><th>PO Qty</th><th>Carton Qty</th><th></th></tr></thead>
+        <thead><tr><th>PO#</th><th>SKU (Barcode)</th><th>Description</th><th>Color</th><th>Size</th><th>PO Qty</th><th>Carton Qty</th><th></th></tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table>
     </div>
@@ -641,7 +949,7 @@ function renderChecklistsTab() {
 
   const lt = state.currentReport.lab_test || {};
   const ltHtml = LAB_TEST_ROWS.map(r => {
-    const cur = lt[r.key] || {};
+    const cur = (lt[r.key] && lt[r.key].mark) ? lt[r.key] : { mark: "yes" };
     return `
     <div style="margin-bottom:8px;">
       <label style="margin-bottom:2px;">${r.label}</label>
@@ -651,7 +959,7 @@ function renderChecklistsTab() {
       </div>
     </div>`;
   }).join("");
-  const resCur = lt.result || {};
+  const resCur = (lt.result && lt.result.mark) ? lt.result : { mark: "yes" };
   const ltResultHtml = `
     <div style="margin-bottom:8px; margin-top:16px; border-top: 1px solid var(--border); padding-top: 10px;">
       <label style="margin-bottom:2px; font-weight: 600;">Result (Under Commercial Tolerance or Not)</label>
@@ -1217,6 +1525,32 @@ function bindTabContent() {
         render();
       });
     });
+    document.getElementById("extract-doc-in-wizard")?.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      toast("Extracting document & barcoded SKUs...");
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const extracted = await api("/reports/extract-document", { method: "POST", body: formData });
+        const rId = state.currentReport.id;
+        
+        if (extracted.header_info) await saveSection("header_info", extracted.header_info);
+        if (extracted.product_category) await saveSection("product_category", extracted.product_category);
+        if (extracted.po_rows && extracted.po_rows.length) await saveSection("po_rows", extracted.po_rows);
+        if (extracted.upc_verification && extracted.upc_verification.length) await saveSection("upc_verification", extracted.upc_verification);
+        if (extracted.standards_reference) await saveSection("standards_reference", extracted.standards_reference);
+        if (extracted.packing_matrix) await saveSection("packing_matrix", extracted.packing_matrix);
+        if (extracted.aql_rows && extracted.aql_rows.length) await saveSection("aql_rows", extracted.aql_rows);
+
+        state.currentReport = await api(`/reports/${rId}`);
+        toast("Document extracted! PO rows & SKUs updated successfully.");
+        render();
+      } catch (err) {
+        toast("Extraction failed: " + err.message);
+      }
+    });
+
     document.getElementById("save-po")?.addEventListener("click", async () => {
       const rows = [...(state.currentReport.po_rows || [])];
       document.querySelectorAll("#po-table input").forEach(inp => {
