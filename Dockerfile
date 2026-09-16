@@ -11,9 +11,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-
 COPY backend/requirements.txt .
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ .
 COPY frontend/ ../frontend/
