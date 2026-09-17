@@ -131,6 +131,10 @@ def create_report(payload: ReportCreate, db: Session = Depends(get_db), user: Us
 
     header_info = payload.header_info or {}
     header_info["report_no"] = report_no
+    if payload.customer_name:
+        header_info["customer_name"] = payload.customer_name
+    if payload.po_number:
+        header_info["po_number"] = payload.po_number
 
     default_lab_test = {
         "lab_test_exist": {"mark": "yes", "remark": ""},
@@ -212,6 +216,15 @@ def update_section(
         raise HTTPException(status_code=400, detail=f"Unknown section: {section}")
 
     setattr(r, section, payload.data)
+
+    if section == "header_info" and isinstance(payload.data, dict):
+        if "report_no" in payload.data:
+            r.report_no = payload.data["report_no"]
+        if "customer_name" in payload.data:
+            r.customer_name = payload.data["customer_name"]
+        if "po_number" in payload.data:
+            r.po_number = payload.data["po_number"]
+
     if r.status == ReportStatus.DRAFT and section in QC_SECTIONS:
         r.status = ReportStatus.QC_IN_PROGRESS
     db.commit()
